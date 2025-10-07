@@ -1,0 +1,745 @@
+CNSL
+prac 3
+CRC:
+#include <iostream>
+#include <string>
+using namespace std;
+string xor1(string a, string b) {
+string result = "";
+for (int i = 1; i < b.length(); i++)
+result += (a[i] == b[i]) ? '0' : '1';
+return result;
+}
+string mod2div(string dividend, string divisor) {
+int pick = divisor.length();
+string tmp = dividend.substr(0, pick);
+int n = dividend.length();
+while (pick < n) {
+if (tmp[0] == '1')
+tmp = xor1(divisor, tmp) + dividend[pick];
+else
+tmp = xor1(string(pick, '0'), tmp) + dividend[pick];
+pick++;
+}
+if (tmp[0] == '1')
+tmp = xor1(divisor, tmp);
+else
+tmp = xor1(string(pick, '0'), tmp);
+return tmp;
+}
+string flip_last_n(string s, int n) {
+for (int i = s.length() - n; i < s.length(); i++) {
+s[i] = (s[i] == '0') ? '1' : '0';
+}
+return s;
+}
+int main() {
+string data, generator;
+cout << "Enter data bits: ";
+cin >> data;
+cout << "Enter generator polynomial (binary): ";
+cin >> generator;
+int n = generator.length() - 1;
+string appended_data = data + string(n, '0');
+string remainder = mod2div(appended_data, generator);
+string codeword = data + remainder;
+cout << "CRC codeword (sent): " << codeword << endl;
+cout << "Remainder (CRC bits): " << remainder << endl;
+string received = flip_last_n(codeword, n);
+cout << "Received codeword (Last " << n << " bits flipped): " << received
+<< endl;
+string rec_remainder = mod2div(received, generator);
+bool error = false;
+for (char c : rec_remainder)
+if (c != '0') error = true;
+if (error)
+cout << "Error detected in received codeword." << endl;
+else
+cout << "No error detected in received codeword." << endl;
+return 0;
+}
+
+HAMMING:
+#include <iostream>
+#include <vector>
+#include <cmath>
+using namespace std;
+int check_parity(int n, int i, vector<int>& code) {
+int count = 0;
+for (int j = i; j <= n; j += 2 * i) {
+for (int k = j; k < j + i && k <= n; k++) {
+if (code[k] == 1)
+count++;
+}
+}
+return (count % 2);
+}
+void generateHammingCode(vector<int>& data, int size) {
+int r = 0;
+while (pow(2, r) < size + r + 1) r++;
+int n = size + r;
+vector<int> code(n + 1, 0);
+int j = 0;
+for (int i = 1; i <= n; i++) {
+if (pow(2, (int)log2(i)) == i) {
+code[i] = 0;
+} else {
+code[i] = data[j++];
+}
+}
+for (int i = 0; i < r; i++) {
+int p = pow(2, i);
+code[p] = check_parity(n, p, code);
+}
+cout << "Hamming code: ";
+for (int i = n; i >= 1; i--)
+cout << code[i];#include <iostream>
+#include <vector>
+#include <cmath>
+using namespace std;
+int check_parity(int n, int i, vector<int>& code) {
+int count = 0;
+for (int j = i; j <= n; j += 2 * i) {
+for (int k = j; k < j + i && k <= n; k++) {
+if (code[k] == 1)
+count++;
+}
+}
+return (count % 2);
+}
+void generateHammingCode(vector<int>& data, int size) {
+int r = 0;
+while (pow(2, r) < size + r + 1) r++;
+int n = size + r;
+vector<int> code(n + 1, 0);
+int j = 0;
+for (int i = 1; i <= n; i++) {
+if (pow(2, (int)log2(i)) == i) {
+code[i] = 0;
+} else {
+code[i] = data[j++];
+}
+}
+for (int i = 0; i < r; i++) {
+int p = pow(2, i);
+code[p] = check_parity(n, p, code);
+}
+cout << "Hamming code: ";
+for (int i = n; i >= 1; i--)
+cout << code[i];
+cout << endl;
+for (int i = n - r + 1; i <= n; i++) {
+code[i] ^= 1;
+}
+cout << "Received (simulated with error): ";
+for (int i = n; i >= 1; i--)
+cout << code[i];
+cout << endl;
+int error_pos = 0;
+for (int i = 0; i < r; i++) {
+int p = pow(2, i);
+if (check_parity(n, p, code) != 0)
+error_pos += p;
+}
+if (error_pos == 0) {
+cout << "No error detected." << endl;
+} else {
+cout << "Error at position: " << error_pos << endl;
+code[error_pos] ^= 1;
+cout << "Corrected code: ";
+for (int i = n; i >= 1; i--)
+cout << endl;
+for (int i = n - r + 1; i <= n; i++) {
+code[i] ^= 1;
+}
+cout << "Received (simulated with error): ";
+for (int i = n; i >= 1; i--)
+cout << code[i];
+cout << endl;
+int error_pos = 0;
+for (int i = 0; i < r; i++) {
+int p = pow(2, i);
+if (check_parity(n, p, code) != 0)
+error_pos += p;
+}
+if (error_pos == 0) {
+cout << "No error detected." << endl;
+} else {
+cout << "Error at position: " << error_pos << endl;
+code[error_pos] ^= 1;
+cout << "Corrected code: ";
+for (int i = n; i >= 1; i--)
+cout << code[i];
+cout << endl;
+}
+}
+int main() {
+int size;
+cout << "Enter number of data bits: ";
+cin >> size;
+vector<int> data(size);
+cout << "Enter data bits (MSB first): ";
+for (int i = 0; i < size; i++)
+cin >> data[i];
+generateHammingCode(data, size);
+return 0;}
+
+Prac 4:
+#include <iostream>
+#include <vector>
+using namespace std;
+#define MAX_SEQ 7
+class GoBackN {
+int base = 0;
+int nextSeqNum = 0;
+int windowSize;
+vector<bool> acked;
+vector<bool> initiallyLost;
+public:
+GoBackN(int w, const vector<bool> &frameLost) : windowSize(w),
+acked(MAX_SEQ, false), initiallyLost(frameLost) {}
+void sender() {
+cout << "\nGo-Back-N Sender:\n";
+while (base < MAX_SEQ) {
+while (nextSeqNum < base + windowSize && nextSeqNum < MAX_SEQ) {
+cout << "Sending frame " << nextSeqNum << endl;
+// On first send, check initial loss
+if (initiallyLost[nextSeqNum]) {
+cout << "Frame " << nextSeqNum << " lost." << endl;
+initiallyLost[nextSeqNum] = false; // Clear loss on
+retransmission
+break;
+} else {
+cout << "ACK received for frame " << nextSeqNum << endl;
+acked[nextSeqNum] = true;
+}
+nextSeqNum++;
+}
+while (base < MAX_SEQ && acked[base]) {
+base++;
+}
+if (base < MAX_SEQ && !acked[base]) {
+cout << "Timeout or Loss detected. Retransmitting from frame
+" << base << endl;
+nextSeqNum = base;
+}
+}
+cout << "All frames sent and acknowledged in Go-Back-N\n";
+}
+};
+class SelectiveRepeat {
+int base = 0;
+int nextSeqNum = 0;
+int windowSize;
+vector<bool> acked;
+vector<bool> initiallyLost;
+public:
+SelectiveRepeat(int w, const vector<bool> &frameLost) : windowSize(w),
+acked(MAX_SEQ, false), initiallyLost(frameLost) {}
+void sender() {
+cout << "\nSelective Repeat Sender:\n";
+while (base < MAX_SEQ) {
+while (nextSeqNum < base + windowSize && nextSeqNum < MAX_SEQ) {
+cout << "Sending frame " << nextSeqNum << endl;
+if (initiallyLost[nextSeqNum]) {
+cout << "Frame " << nextSeqNum << " lost." << endl;
+initiallyLost[nextSeqNum] = false; // Clear loss on
+retransmission
+} else {
+cout << "ACK received for frame " << nextSeqNum << endl;
+acked[nextSeqNum] = true;
+}
+nextSeqNum++;
+}
+while (base < MAX_SEQ && acked[base]) {
+base++;
+}
+for (int i = base; i < base + windowSize && i < MAX_SEQ; i++) {
+if (!acked[i]) {
+cout << "Retransmitting frame " << i << endl;
+cout << "ACK received for frame " << i << " after
+retransmission\n";
+acked[i] = true;
+}
+}
+}
+cout << "All frames sent and acknowledged in Selective Repeat\n";
+}
+};
+int main() {
+int windowSize = 4;
+vector<bool> frameLost(MAX_SEQ, false);
+frameLost[2] = true;
+frameLost[5] = true;
+GoBackN gbn(windowSize, frameLost);
+gbn.sender();
+SelectiveRepeat sr(windowSize, frameLost);
+sr.sender();
+return 0;
+}
+Prac5
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <sstream>
+using namespace std;
+void printDottedDecimal(vector<int> ip) {
+cout << ip[0] << "." << ip[1] << "." << ip[2] << "." << ip[3];
+}
+int main() {
+string ipAddressStr;
+cout << "Enter an IP Address: ";
+cin >> ipAddressStr;
+vector<int> ip(4);
+char dot;
+stringstream ss(ipAddressStr);
+ss >> ip[0] >> dot >> ip[1] >> dot >> ip[2] >> dot >> ip[3];
+char ipClass;
+vector<int> defaultMask(4);
+int networkBits;
+if (ip[0] >= 1 && ip[0] <= 126) {
+ipClass = 'A';
+defaultMask = {255, 0, 0, 0};
+networkBits = 8;
+} else if (ip[0] >= 128 && ip[0] <= 191) {
+ipClass = 'B';
+defaultMask = {255, 255, 0, 0};
+networkBits = 16;
+} else if (ip[0] >= 192 && ip[0] <= 223) {
+ipClass = 'C';
+defaultMask = {255, 255, 255, 0};
+networkBits = 24;
+} else {
+cout << "IP Address is Class D, E, or invalid. This program supports Class A,
+B, and C." << endl;
+return 1;
+}
+cout << "\nIP Address Class: " << ipClass << endl;
+cout << "Default Subnet Mask: ";
+printDottedDecimal(defaultMask);
+cout << endl;
+int numSubnets;
+cout << "\nEnter the number of subnets required: ";
+cin >> numSubnets;
+int borrowedBits = ceil(log2(numSubnets));
+int newNetworkBits = networkBits + borrowedBits;
+int hostBits = 32 - newNetworkBits;
+vector<int> newMask = defaultMask;
+int bitsToAdd = borrowedBits;
+int currentOctet = networkBits / 8;
+while (bitsToAdd > 0 && currentOctet < 4) {
+int bitsInOctet = 8 - (networkBits % 8);
+if (currentOctet == networkBits / 8) {
+bitsInOctet = 8 - (networkBits % 8);
+} else {
+bitsInOctet = 8;
+}
+int bitsToSet = min(bitsToAdd, bitsInOctet);
+int maskValue = 0;
+for (int i = 7; i > 7 - bitsToSet; --i) {
+maskValue += pow(2, i);
+}
+newMask[currentOctet] += maskValue;
+bitsToAdd -= bitsToSet;
+currentOctet++;
+}
+if (ipClass == 'A') {
+int maskValue = 0;
+int tempBits = borrowedBits;
+for(int i = 7; i >= 8 - tempBits && tempBits > 0; i--){
+maskValue += pow(2,i);
+if(i==0 || (8-i == borrowedBits)) break;
+}
+newMask[1] = maskValue;
+} else if (ipClass == 'B') {
+int maskValue = 0;
+int tempBits = borrowedBits;
+for(int i = 7; i >= 8 - tempBits && tempBits > 0; i--){
+maskValue += pow(2,i);
+if(i==0 || (8-i == borrowedBits)) break;
+}
+newMask[2] = maskValue;
+} else if (ipClass == 'C') {
+int maskValue = 0;
+int tempBits = borrowedBits;
+for(int i = 7; i >= 8 - tempBits && tempBits > 0; i--){
+maskValue += pow(2,i);
+if(i==0 || (8-i == borrowedBits)) break;
+}
+newMask[3] = maskValue;
+}
+cout << "\n--- Subnetting Details ---" << endl;
+cout << "New Subnet Mask: ";
+printDottedDecimal(newMask);
+cout << " (/" << newNetworkBits << ")" << endl;
+cout << "Bits Borrowed: " << borrowedBits << endl;
+cout << "Total Subnets: " << pow(2, borrowedBits) << endl;
+cout << "Hosts per Subnet: " << (pow(2, hostBits) - 2) << endl;
+cout << "\n--- Subnet Ranges ---" << endl;
+int blockSize = 256 - newMask[3];
+if (ipClass == 'B') blockSize = 256 - newMask[2];
+if (ipClass == 'A') blockSize = 256 - newMask[1];
+for (int i = 0; i < pow(2, borrowedBits); ++i) {
+vector<int> networkId = ip;
+vector<int> broadcastId = ip;
+if (ipClass == 'C') {
+networkId[2] = ip[2];
+networkId[3] = i * blockSize;
+broadcastId[3] = networkId[3] + blockSize - 1;
+} else if (ipClass == 'B') {
+networkId[2] = i * blockSize;
+networkId[3] = 0;
+broadcastId[2] = networkId[2] + blockSize - 1;
+broadcastId[3] = 255;
+} else if (ipClass == 'A') {
+networkId[1] = i * blockSize;
+networkId[2] = 0;
+networkId[3] = 0;
+broadcastId[1] = networkId[1] + blockSize - 1;
+broadcastId[2] = 255;
+broadcastId[3] = 255;
+}
+vector<int> firstHost = networkId;
+firstHost[3]++;
+vector<int> lastHost = broadcastId;
+lastHost[3]--;
+cout << "\nSubnet " << i + 1 << ":" << endl;#include <iostream>
+using namespace std;
+#define INF 999
+int main() {
+int n;
+cout << "Enter number of routers: ";
+cin >> n;
+int cost[n][n];
+for (int i = 0; i < n; i++)
+for (int j = 0; j < n; j++)
+cost[i][j] = (i == j) ? 0 : INF;
+for (int i = 0; i < n; i++) {
+for (int j = i + 1; j < n; j++) {
+int c;
+cout << "Enter cost between router " << i+1 << " and router " << j+1 << "
+(-1 for no link): ";
+cin >> c;
+if (c != -1) {
+cost[i][j] = cost[j][i] = c;
+}
+}
+}
+int dist[n][n];
+for (int i = 0; i < n; i++)
+for (int j = 0; j < n; j++)
+dist[i][j] = cost[i][j];
+for (int k = 0; k < n; k++) {
+for (int i = 0; i < n; i++) {
+cout << " Network Address: ";
+printDottedDecimal(networkId);
+cout << endl;
+cout << " Host Range: ";
+printDottedDecimal(firstHost);
+cout << " - ";
+printDottedDecimal(lastHost);
+cout << endl;
+cout << " Broadcast Address: ";
+printDottedDecimal(broadcastId);
+cout << endl;}
+return 0; }
+
+prac6:
+for (int j = 0; j < n; j++) {
+if (dist[i][j] > dist[i][k] + dist[k][j])
+dist[i][j] = dist[i][k] + dist[k][j];
+}
+}
+}
+cout << "Final Routing Table:\n";
+for (int i = 0; i < n; i++) {
+cout << "Router " << i+1 << ": ";
+for (int j = 0; j < n; j++) {
+if (dist[i][j] == INF) cout << "INF ";
+else cout << dist[i][j] << " ";}
+cout << "\n";
+}
+return 0; }
+
+Pinak Dhabu TECA-119
+Computer Networks and Security Laboratory
+Practical 7
+CODE:
+1. Hello Program Client Server
+Hello Client
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8080);
+addr.sin_addr.s_addr = INADDR_ANY;
+connect(s, (sockaddr*)&addr, sizeof(addr));
+const char* msg = "Hello from client";
+send(s, msg, strlen(msg), 0);
+char buffer[1024] = {0};
+recv(s, buffer, 1024, 0);
+std::cout << "Message from server: " << buffer << std::endl;
+close(s);
+return 0;
+}Pinak Dhabu TECA-119
+Hello Server
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8080);
+addr.sin_addr.s_addr = INADDR_ANY;
+bind(s, (sockaddr*)&addr, sizeof(addr));
+listen(s, 5);
+int client = accept(s, nullptr, nullptr);
+char buffer[1024] = {0};
+recv(client, buffer, 1024, 0);
+std::cout << "Message from client: " << buffer << std::endl;
+const char* msg = "Hello from server";
+send(client, msg, strlen(msg), 0);
+close(client);
+close(s);
+return 0;
+}Pinak Dhabu TECA-119
+2. File Contents Transfer
+File Client
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8081);
+addr.sin_addr.s_addr = INADDR_ANY;
+connect(s, (sockaddr*)&addr, sizeof(addr));
+const char* file_content = "This is a file content\nLine 2 of
+file\nLine 3 of file\n";
+std::cout << "Client sending file content:\n" << file_content;
+send(s, file_content, strlen(file_content), 0);
+close(s);
+return 0;
+}Pinak Dhabu TECA-119
+File Server
+#include <iostream>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8081);
+addr.sin_addr.s_addr = INADDR_ANY;
+bind(s, (sockaddr*)&addr, sizeof(addr));
+listen(s, 5);
+int client = accept(s, nullptr, nullptr);
+char buffer[1024];
+int n = recv(client, buffer, sizeof(buffer)-1, 0);
+if(n > 0) {
+buffer[n] = '\0';
+std::cout << "Server received file content:\n" << buffer <<
+std::endl;
+}
+close(client);
+close(s);
+return 0;}
+3. Calculator
+Calc Client
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8082);
+addr.sin_addr.s_addr = INADDR_ANY;
+connect(s, (sockaddr*)&addr, sizeof(addr));
+const char* expr = "15 * 3";
+std::cout << "Sending expression: " << expr << std::endl;
+send(s, expr, strlen(expr), 0);
+char buffer[1024] = {0};
+int n = recv(s, buffer, sizeof(buffer)-1, 0);
+if(n > 0) {
+buffer[n] = '\0';
+std::cout << "Received from server: " << buffer << std::endl;
+} close(s);
+return 0;
+}Pinak Dhabu TECA-119
+Calc Server
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <netinet/in.h>
+int main()
+{
+int s = socket(AF_INET, SOCK_STREAM, 0);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8082);
+addr.sin_addr.s_addr = INADDR_ANY;
+bind(s, (sockaddr*)&addr, sizeof(addr));
+listen(s, 5);
+int client = accept(s, nullptr, nullptr);
+char buffer[1024];
+int n = recv(client, buffer, sizeof(buffer)-1, 0);
+if(n > 0) {
+buffer[n] = '\0';
+std::cout << "Received expression: " << buffer << std::endl;
+int a, b;
+char op;
+sscanf(buffer, "%d %c %d", &a, &op, &b);
+int result = 0;
+if(op == '+') result = a + b;
+else if(op == '-') result = a - b;
+else if(op == '*') result = a * b;
+else if(op == '/') result = (b != 0) ? a / b : 0;
+std::cout << "Calculated result: " << result << std::endl;
+sprintf(buffer, "Result = %d", result);
+send(client, buffer, strlen(buffer), 0);
+}
+}
+close(client);
+close(s);
+return 0;}
+Pinak Dhabu TECA-119
+Computer Networks and Security Laboratory
+Practical 8
+CODE:
+1. UDP Server (Receiver)
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+FILE CONTENTS: example.txt
+This was an example file to be
+sent by sender line
+#include <cstdlib>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+The file is successfully recived
+to the reciever!
+#include <unistd.h>
+#define PORT 8080
+#define BUFFER_SIZE 1024
+int main() {
+int sockfd;
+struct sockaddr_in servaddr, cliaddr;
+socklen_t len;
+char buffer[BUFFER_SIZE];
+FILE *fp;
+sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+if (sockfd < 0) {
+perror("socket creation failed");
+exit(EXIT_FAILURE);}
+memset(&servaddr, 0, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_addr.s_addr = INADDR_ANY;
+servaddr.sin_port = htons(PORT);
+if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+perror("bind failed");
+close(sockfd);
+exit(EXIT_FAILURE);}
+std::cout << "Server is running and waiting for file..." << std::endl;
+len = sizeof(cliaddr);
+int n = recvfrom(sockfd, (char *)buffer, BUFFER_SIZE, 0, (struct sockaddr *)&cliaddr, &len);Pinak Dhabu TECA-119
+if (n <= 0) {
+perror("Failed to receive filename");
+close(sockfd);
+exit(EXIT_FAILURE);}
+buffer[n] = '\0';
+std::string filename("received_");
+filename += buffer;
+fp = fopen(filename.c_str(), "wb");
+if (fp == nullptr) {
+perror("Failed to create file");
+close(sockfd);
+exit(EXIT_FAILURE);}
+std::cout << "Receiving file: " << filename << std::endl;
+while (true) {
+n = recvfrom(sockfd, (char *)buffer, BUFFER_SIZE, 0, (struct sockaddr *)&cliaddr, &len);
+if (n < 0) {
+perror("recvfrom failed");
+break;}
+if (n == 3 && strncmp(buffer, "END", 3) == 0) {
+std::cout << "File transfer completed." << std::endl;
+break;}
+fwrite(buffer, sizeof(char), n, fp);}
+fclose(fp);
+close(sockfd);
+return 0;
+}
+2. UDP Client (Sender)
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#define PORT 8080
+#define BUFFER_SIZE 1024
+int main(int argc, char *argv[]) {Pinak Dhabu TECA-119
+int sockfd;
+struct sockaddr_in servaddr;
+FILE *fp;
+char buffer[BUFFER_SIZE];
+socklen_t addr_len;
+if (argc != 3) {
+std::cerr << "Usage: " << argv[0] << " <server_ip> <file_to_send>" << std::endl;
+return 1;
+}
+const char *server_ip = argv[1];
+const char *filename = argv[2];
+sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+if (sockfd < 0) {
+perror("socket creation failed");
+exit(EXIT_FAILURE);
+}
+memset(&servaddr, 0, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(PORT);
+if (inet_pton(AF_INET, server_ip, &servaddr.sin_addr) <= 0) {
+perror("Invalid server IP address");
+close(sockfd);
+exit(EXIT_FAILURE);
+}
+sendto(sockfd, filename, strlen(filename), 0, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+fp = fopen(filename, "rb");
+if (fp == nullptr) {
+perror("Failed to open file");
+close(sockfd);
+exit(EXIT_FAILURE);}
+while (true) {
+size_t bytesRead = fread(buffer, sizeof(char), BUFFER_SIZE, fp);
+if (bytesRead > 0) {
+sendto(sockfd, buffer, bytesRead, 0, (const struct sockaddr *)&servaddr, sizeof(servaddr));}
+if (bytesRead < BUFFER_SIZE) {
+if (feof(fp)) {
+break;}Pinak Dhabu TECA-119
+if (ferror(fp)) {
+perror("Error reading file");
+fclose(fp);
+close(sockfd);
+exit(EXIT_FAILURE);}}}
+sendto(sockfd, "END", 3, 0, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+std::cout << "File sent successfully." << std::endl;
+fclose(fp);
+close(sockfd);
+return 0;}
+OUTPUT:
