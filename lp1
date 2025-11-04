@@ -1,12 +1,449 @@
 /*
-FCFS CPU Scheduling Algorithm
+Problem Statement 1: Two-Pass Assembler
+Design suitable Data structures and implement Pass-I and Pass-II of a two-pass assembler for pseudo-machine.
+Implementation should consist of a few instructions from each category and few assembler directives.
+The output of Pass-I (intermediate code file and symbol table) should be input for Pass-II.
 */
+
+import java.io.*;
+import java.util.*;
+
+// Class for Symbol Table Entry
+class Symbol {
+    String symbol;
+    int address;
+
+    Symbol(String symbol, int address) {
+        this.symbol = symbol;
+        this.address = address;
+    }
+}
+
+// Class for Literal Table Entry (optional, if literals are used)
+class Literal {
+    String literal;
+    int address;
+
+    Literal(String literal, int address) {
+        this.literal = literal;
+        this.address = address;
+    }
+}
+
+public class TwoPassAssembler {
+    // Opcode table (Mnemonic -> (class, opcode))
+    static Map<String, String[]> opTable = new HashMap<>();
+    // Symbol Table: Symbol -> Address
+    static Map<String, Integer> symbolTable = new LinkedHashMap<>();
+    // Literal Table: Literal -> Address (not used extensively here)
+    static Map<String, Integer> literalTable = new LinkedHashMap<>();
+
+    static List<String> intermediateCode = new ArrayList<>();
+    static int locCounter = 0;
+
+    static BufferedWriter interWriter;
+    static BufferedWriter symWriter;
+
+    // Sample directives
+    static final String[] directives = {"START", "END", "DC", "DS"};
+
+    // Initialize opcode table with a few instructions (class, opcode)
+    static void initializeOpTable() {
+        opTable.put("LDA", new String[]{"IS", "01"});
+        opTable.put("STA", new String[]{"IS", "02"});
+        opTable.put("ADD", new String[]{"IS", "03"});
+        opTable.put("SUB", new String[]{"IS", "04"});
+        opTable.put("MUL", new String[]{"IS", "05"});
+        opTable.put("DIV", new String[]{"IS", "06"});
+        opTable.put("MOV", new String[]{"IS", "07"});
+        // Assembler directives
+        opTable.put("START", new String[]{"AD", "01"});
+        opTable.put("END", new String[]{"AD", "02"});
+        opTable.put("DC", new String[]{"DL", "01"});
+        opTable.put("DS", new String[]{"DL", "02"});
+    }
+
+    // Check if word is a directive
+    static boolean isDirective(String word) {
+        for (String dir : directives)
+            if (dir.equals(word))
+                return true;
+        return false;
+    }
+
+    // Pass 1: Convert source code into intermediate code, build symbol table
+    static void pass1(String sourceFile, String interFile, String symFile) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(sourceFile));
+        interWriter = new BufferedWriter(new FileWriter(interFile));
+        symWriter = new BufferedWriter(new FileWriter(symFile));
+
+        String line;
+        locCounter = 0;
+
+        while ((line = br.readLine()) != null) {
+            if (line.trim().isEmpty()) continue;
+
+            String[] parts = line.trim().split("\\s+");
+            String label = null, opcode, operand = null;
+
+            // Parsing line
+            if (parts.length == 3) {
+                label = parts[0];
+                opcode = parts[1];
+                operand = parts[2];
+            } else if (parts.length == 2) {
+                opcode = parts[0];
+                operand = parts[1];
+            } else {
+                opcode = parts[0];
+            }
+
+            // Process LABEL
+            if (label != null && !label.equals("-")) {
+                if (!symbolTable.containsKey(label))
+                    symbolTable.put(label, locCounter);
+                else
+                    System.out.println("Error: Duplicate symbol " + label);
+            }
+
+            // Process opcode/directives
+            if (opTable.containsKey(opcode)) {
+                String[] classOpcode = opTable.get(opcode);
+                String cls = classOpcode[0];
+
+                if (cls.equals("AD")) { // Assembler Directive
+                    if (opcode.equals("START")) {
+                        locCounter = Integer.parseInt(operand);
+                        intermediateCode.add("(AD,01) (C," + operand + ")");
+                    } else if (opcode.equals("END")) {
+                        intermediateCode.add("(AD,02)");
+                        break;
+                    }
+                } else if (cls.equals("IS")) { // Imperative Statement
+                    String operandCode = "";
+                    if (operand != null) {
+                        if (symbolTable.containsKey(operand)) {
+                            operandCode = "(S," + getSymbolIndex(operand) + ")";
+                        } else if (operand.matches("\\d+")) {
+                            operandCode = "(C," + operand + ")";
+                        } else {
+                            // Add to symbol table if not present
+                            if (!symbolTable.containsKey(operand)) {
+                                symbolTable.put(operand, -1);
+                            }
+                            operandCode = "(S," + getSymbolIndex(operand) + ")";
+                        }
+                    } else {
+                        operandCode = "-";
+                    }
+                    intermediateCode.add("(" + cls + "," + classOpcode[1] + ") " + operandCode);
+                    locCounter++;
+                } else if (cls.equals("DL")) { // Declarative Statement
+                    if (opcode.equals("DC")) {
+                        intermediateCode.add("(DL,01) (C," + operand + ")");
+                        locCounter++;
+                        if (label != null && !label.equals("-")) {
+                            symbolTable.put(label, locCounter - 1);
+                        }
+                    } else if (opcode.equals("DS")) {
+                        int size = Integer.parseInt(operand);
+                        intermediateCode.add("(DL,02) (C," + operand + ")");
+                        locCounter += size;
+                        if (label != null && !label.equals("-")) {
+                            symbolTable.put(label, locCounter - size);
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Error: Invalid Opcode " + opcode);
+            }
+        }
+        // Write intermediate code to file
+        for (String s : intermediateCode) {
+            interWriter.write(s);
+            interWriter.newLine();
+        }
+        interWriter.close();
+
+        // Write symbol table with index and address
+        int index = 1;
+        symWriter.write("Index\tSymbol\tAddress\n");
+        for (Map.Entry<String, Integer> entry : symbolTable.entrySet()) {
+            symWriter.write(index + "\t" + entry.getKey() + "\t" + entry.getValue() + "\n");
+            index++;
+        }
+        symWriter.close();
+        br.close();
+    }
+
+    static int getSymbolIndex(String symbol) {
+        int idx = 1;
+        for (String s : symbolTable.keySet()) {
+            if (s.equals(symbol))
+                return idx;
+            idx++;
+        }
+        return -1;
+    }
+
+    // Pass 2: Generate machine code from intermediate code using symbol table
+    static void pass2(String interFile, String symFile, String machineCodeFile) throws IOException {
+        BufferedReader interReader = new BufferedReader(new FileReader(interFile));
+        BufferedReader symReader = new BufferedReader(new FileReader(symFile));
+        BufferedWriter machineWriter = new BufferedWriter(new FileWriter(machineCodeFile));
+
+        // Read symbol addresses into an array by index
+        Map<Integer, Integer> symAddrMap = new HashMap<>();
+        String symLine;
+        symReader.readLine(); // Skip header
+        while ((symLine = symReader.readLine()) != null) {
+            String[] parts = symLine.trim().split("\\s+");
+            int idx = Integer.parseInt(parts[0]);
+            int addr = Integer.parseInt(parts[2]);
+            symAddrMap.put(idx, addr);
+        }
+
+        String line;
+        int loc = 0;
+        while ((line = interReader.readLine()) != null) {
+            // Example intermediate: (IS,01) (S,2)
+            String[] parts = line.trim().split("\\s+");
+            if (parts.length == 2) {
+                // Parse opcode part
+                String op_part = parts[0];
+                String opr_part = parts[1];
+                // Extract opcode number
+                int opcode = Integer.parseInt(op_part.substring(op_part.indexOf(",") + 1, op_part.indexOf(")")));
+
+                if (opr_part.equals("-")) {
+                    // No operand
+                    machineWriter.write(loc + " " + opcode + " 0");
+                } else if (opr_part.startsWith("(S,")) {
+                    // Symbol operand
+                    int symIndex = Integer.parseInt(opr_part.substring(opr_part.indexOf(",") + 1, opr_part.indexOf(")")));
+                    int addr = symAddrMap.get(symIndex);
+                    machineWriter.write(loc + " " + opcode + " " + addr);
+                } else if (opr_part.startsWith("(C,")) {
+                    int constant = Integer.parseInt(opr_part.substring(opr_part.indexOf(",") + 1, opr_part.indexOf(")")));
+                    machineWriter.write(loc + " " + opcode + " " + constant);
+                }
+                loc++;
+            } else if (parts.length == 1) {
+                // Directive like (AD,02) no machine code
+                // Skip or write blank
+            }
+            machineWriter.newLine();
+        }
+        interReader.close();
+        symReader.close();
+        machineWriter.close();
+    }
+
+    public static void main(String[] args) {
+        try {
+            initializeOpTable();
+
+            // Input source file: "source.asm"
+            // Output intermediate: "intermediate.ic"
+            // Output symbol table: "symtab.txt"
+            // Output machine code: "machinecode.mc"
+
+            pass1("source.asm", "intermediate.ic", "symtab.txt");
+            pass2("intermediate.ic", "symtab.txt", "machinecode.mc");
+
+            System.out.println("Two-pass assembly completed.");
+            System.out.println("Intermediate code written to intermediate.ic");
+            System.out.println("Symbol table written to symtab.txt");
+            System.out.println("Machine code written to machinecode.mc");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+/*
+Problem Statement 2: Two-Pass Macro Processor
+Design suitable data structures and implement Pass-I and Pass-II of a two-pass macroprocessor.
+The output of Pass-I (MNT, MDT and intermediate code file without any macro definitions) should be input for Pass-II.
+*/
+
+import java.io.*;
+import java.util.*;
+
+class MNTEntry {
+    String macroName;
+    int mdtIndex; // Starting index in MDT
+
+    MNTEntry(String macroName, int mdtIndex) {
+        this.macroName = macroName;
+        this.mdtIndex = mdtIndex;
+    }
+}
+
+public class TwoPassMacroProcessor {
+    static List<MNTEntry> MNT = new ArrayList<>();
+    static List<String> MDT = new ArrayList<>();
+    static List<String> intermediateCode = new ArrayList<>();
+
+    // Pass-I: Build MNT and MDT, generate intermediate code w/o macro definitions
+    static void pass1(String sourceFile, String interFile, String mntFile, String mdtFile) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(sourceFile));
+        BufferedWriter interWriter = new BufferedWriter(new FileWriter(interFile));
+        BufferedWriter mntWriter = new BufferedWriter(new FileWriter(mntFile));
+        BufferedWriter mdtWriter = new BufferedWriter(new FileWriter(mdtFile));
+
+        String line;
+        boolean inMacro = false;
+        String currentMacro = null;
+        int mdtIndex = 0;
+
+        while ((line = br.readLine()) != null) {
+            String trimmedLine = line.trim();
+            if (trimmedLine.isEmpty()) continue;
+
+            String[] parts = trimmedLine.split("\\s+");
+            String firstWord = parts[0];
+
+            if (firstWord.equalsIgnoreCase("MACRO")) {
+                inMacro = true;
+                continue; // Skip MACRO line
+            }
+
+            if (inMacro) {
+                if (currentMacro == null) {
+                    // Next line after MACRO is macro header: macro name + params
+                    currentMacro = parts[0];
+
+                    // Add macro to MNT with current MDT index
+                    MNT.add(new MNTEntry(currentMacro, MDT.size()));
+
+                    // Add macro header line to MDT unchanged
+                    MDT.add(trimmedLine);
+
+                } else if (firstWord.equalsIgnoreCase("MEND")) {
+                    // End of macro definition
+                    MDT.add("MEND");
+                    inMacro = false;
+                    currentMacro = null;
+                } else {
+                    // Macro body line, store in MDT with parameter replacement as is (no params processing here)
+                    MDT.add(trimmedLine);
+                }
+            } else {
+                // Outside macro, write line to intermediate code
+                interWriter.write(trimmedLine);
+                interWriter.newLine();
+            }
+        }
+
+        // Write MNT to file: macroName mdtIndex
+        for (MNTEntry entry : MNT) {
+            mntWriter.write(entry.macroName + "\t" + entry.mdtIndex);
+            mntWriter.newLine();
+        }
+        // Write MDT lines to file
+        for (String mdtLine : MDT) {
+            mdtWriter.write(mdtLine);
+            mdtWriter.newLine();
+        }
+
+        br.close();
+        interWriter.close();
+        mntWriter.close();
+        mdtWriter.close();
+    }
+
+    // Pass-II: Expand macros in intermediate code using MNT and MDT
+    static void pass2(String interFile, String mntFile, String mdtFile, String outputFile) throws IOException {
+        BufferedReader interReader = new BufferedReader(new FileReader(interFile));
+        BufferedReader mntReader = new BufferedReader(new FileReader(mntFile));
+        BufferedReader mdtReader = new BufferedReader(new FileReader(mdtFile));
+        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(outputFile));
+
+        // Rebuild MNT from file to Map<String, Integer>
+        Map<String, Integer> mntMap = new HashMap<>();
+        String mntLine;
+        while ((mntLine = mntReader.readLine()) != null) {
+            String[] parts = mntLine.trim().split("\\s+");
+            mntMap.put(parts[0], Integer.parseInt(parts[1]));
+        }
+
+        // Read entire MDT into list
+        List<String> mdtList = new ArrayList<>();
+        String mdtLine;
+        while ((mdtLine = mdtReader.readLine()) != null) {
+            mdtList.add(mdtLine);
+        }
+
+        String line;
+        while ((line = interReader.readLine()) != null) {
+            String trimmedLine = line.trim();
+            if (trimmedLine.isEmpty()) {
+                outputWriter.newLine();
+                continue;
+            }
+            String[] parts = trimmedLine.split("\\s+");
+            String possibleMacro = parts[0];
+
+            if (mntMap.containsKey(possibleMacro)) {
+                // Macro call detected, expand using MDT
+                int mdtIndex = mntMap.get(possibleMacro);
+                // Simple paramless expansion 
+                while (!mdtList.get(mdtIndex).equalsIgnoreCase("MEND")) {
+                    outputWriter.write(mdtList.get(mdtIndex));
+                    outputWriter.newLine();
+                    mdtIndex++;
+                }
+            } else {
+                // Normal line write as is
+                outputWriter.write(trimmedLine);
+                outputWriter.newLine();
+            }
+        }
+
+        interReader.close();
+        mntReader.close();
+        mdtReader.close();
+        outputWriter.close();
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Files: source.asm contains macros + code
+            // pass1 outputs intermediate.asm, mnt.txt, mdt.txt
+            // pass2 inputs intermediate.asm, mnt.txt, mdt.txt and outputs expanded.asm
+
+            pass1("source.asm", "intermediate.asm", "mnt.txt", "mdt.txt");
+            pass2("intermediate.asm", "mnt.txt", "mdt.txt", "expanded.asm");
+
+            System.out.println("Two-pass Macro processing completed.");
+            System.out.println("Intermediate code: intermediate.asm");
+            System.out.println("Macro Name Table: mnt.txt");
+            System.out.println("Macro Definition Table: mdt.txt");
+            System.out.println("Expanded code after macro expansion: expanded.asm");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+/* 
+Problem Statement: First Come First Serve (FCFS) CPU Scheduling
+Write a program to simulate the First Come First Serve (FCFS) CPU scheduling algorithm.
+The program should accept process details such as Process ID, Arrival Time, and Burst Time and compute the Waiting Time and Turnaround Time for each process. Display the Gantt chart, average waiting time, and average turnaround time.
+
+Description:
+This program simulates the FCFS CPU scheduling algorithm. It takes input for the number of processes and their respective burst times. Although the problem statement mentions arrival time, this implementation assumes all processes arrive at time zero (or in order) since arrival time handling is not fully included here. The program calculates waiting time and turnaround time for each process and prints a Gantt chart along with average waiting time and turnaround time.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
 
 struct Process {
     int id;
+    int arrival_time;
     int burst_time;
     int waiting_time;
     int turnaround_time;
@@ -27,36 +464,91 @@ void initialize_processes() {
     
     for (int i = 0; i < num_processes; i++) {
         processes[i].id = i + 1;
+        printf("Enter arrival time for Process P%d: ", processes[i].id);
+        scanf("%d", &processes[i].arrival_time);
         printf("Enter burst time for Process P%d: ", processes[i].id);
         scanf("%d", &processes[i].burst_time);
     }
 }
 
 void calculate_fcfs() {
-    // First process has zero waiting time
-    processes[0].waiting_time = 0;
+    int service_time[MAX_PROCESSES];
     
-    // Calculate waiting time for subsequent processes
+    // First process's service time is arrival time
+    service_time = processes.arrival_time;
+    processes.waiting_time = 0;
+    processes.turnaround_time = processes.burst_time;
+    
     for (int i = 1; i < num_processes; i++) {
-        processes[i].waiting_time = processes[i-1].waiting_time + processes[i-1].burst_time;
+        // Service time is the sum of previous process's service time and burst time
+        service_time[i] = service_time[i-1] + processes[i-1].burst_time;
+        
+        // Waiting time = service time - arrival time
+        processes[i].waiting_time = service_time[i] - processes[i].arrival_time;
+        
+        if (processes[i].waiting_time < 0) {
+            processes[i].waiting_time = 0;
+            service_time[i] = processes[i].arrival_time;
+        }
+        
+        // Turnaround time = burst time + waiting time
+        processes[i].turnaround_time = processes[i].burst_time + processes[i].waiting_time;
+    }
+}
+
+void display_gantt_chart() {
+    printf("\nGantt Chart:\n ");
+    
+    // Top bar
+    for(int i = 0; i < num_processes; i++) {
+        printf("--------");
+    }
+    printf("\n|");
+    
+    // Process IDs in the chart
+    for(int i = 0; i < num_processes; i++) {
+        printf("  P%d    |", processes[i].id);
     }
     
-    // Calculate turnaround time for all processes
-    for (int i = 0; i < num_processes; i++) {
-        processes[i].turnaround_time = processes[i].waiting_time + processes[i].burst_time;
+    printf("\n ");
+    
+    // Bottom bar
+    for(int i = 0; i < num_processes; i++) {
+        printf("--------");
     }
+    printf("\n");
+    
+    // Timeline starts with first process arrival or zero if arrival earlier
+    int current_time = 0;
+    if (processes.arrival_time > 0) {
+        current_time = processes.arrival_time;
+    }
+    
+    // Print timeline
+    printf("%d", current_time);
+    
+    for(int i = 0; i < num_processes; i++) {
+        // Move current time to max between current time or process arrival
+        if (processes[i].arrival_time > current_time) {
+            current_time = processes[i].arrival_time;
+        }
+        current_time += processes[i].burst_time;
+        printf("        %d", current_time);
+    }
+    printf("\n");
 }
 
 void display_results() {
     printf("\n--- FCFS Scheduling Results ---\n");
-    printf("Process\tBurst Time\tWaiting Time\tTurnaround Time\n");
-    printf("----------------------------------------------------\n");
+    printf("Process\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    printf("---------------------------------------------------------------------\n");
     
     float total_wt = 0, total_tat = 0;
     
     for (int i = 0; i < num_processes; i++) {
-        printf("P%d\t%d\t\t%d\t\t%d\n",
+        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n",
                processes[i].id,
+               processes[i].arrival_time,
                processes[i].burst_time,
                processes[i].waiting_time,
                processes[i].turnaround_time);
@@ -65,7 +557,7 @@ void display_results() {
         total_tat += processes[i].turnaround_time;
     }
     
-    printf("----------------------------------------------------\n");
+    printf("---------------------------------------------------------------------\n");
     printf("Average Waiting Time: %.2f\n", total_wt / num_processes);
     printf("Average Turnaround Time: %.2f\n", total_tat / num_processes);
 }
@@ -73,14 +565,18 @@ void display_results() {
 int main() {
     initialize_processes();
     calculate_fcfs();
+    display_gantt_chart();
     display_results();
     return 0;
 }
 
-
 /*
-SJF CPU Scheduling Algorithm
+Problem Statement 4: Shortest Job First (SJF – Preemptive) Scheduling
+Write a program to simulate the Shortest Job First (SJF – Preemptive) CPU scheduling algorithm. The program should calculate and display the order of execution, waiting time, turnaround time, and their averages for all processes.
+Description:
+This program simulates the SJF Preemptive scheduling algorithm where the CPU is assigned to the process with the shortest remaining burst time at every time unit. Processes with earlier arrival times and smaller burst times are prioritized. The program tracks remaining time for each process, calculates waiting and turnaround times after completion, and prints the results including average waiting and turnaround times.
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
@@ -124,8 +620,16 @@ void calculate_sjf() {
     int check = 0;
     
     while (completed != num_processes) {
+        shortest = -1;
+        min_burst = 9999;
+        check = 0;
+        
+        // Find process with shortest remaining time at current time
         for (int i = 0; i < num_processes; i++) {
-            if (processes[i].arrival_time <= current_time && processes[i].remaining_time < min_burst && processes[i].remaining_time > 0) {
+            if (processes[i].arrival_time <= current_time && 
+                processes[i].remaining_time > 0 && 
+                processes[i].remaining_time < min_burst) 
+            {
                 min_burst = processes[i].remaining_time;
                 shortest = i;
                 check = 1;
@@ -137,34 +641,33 @@ void calculate_sjf() {
             continue;
         }
         
+        // Execute the shortest process for one unit time
         processes[shortest].remaining_time--;
-        min_burst = processes[shortest].remaining_time;
+        current_time++;
         
-        if (min_burst == 0) {
-            min_burst = 9999;
-        }
-        
+        // If process is completed, update metrics
         if (processes[shortest].remaining_time == 0) {
             completed++;
-            check = 0;
-            processes[shortest].turnaround_time = current_time + 1 - processes[shortest].arrival_time;
+            processes[shortest].turnaround_time = current_time - processes[shortest].arrival_time;
             processes[shortest].waiting_time = processes[shortest].turnaround_time - processes[shortest].burst_time;
-            if (processes[shortest].waiting_time < 0) processes[shortest].waiting_time = 0;
+            if (processes[shortest].waiting_time < 0) {
+                processes[shortest].waiting_time = 0;
+            }
         }
-        current_time++;
     }
 }
 
 void display_results() {
-    printf("\n--- SJF CPU Sheduling Algorithm ---\n");
-    printf("Process\tBurst Time\tWaiting Time\tTurnaround Time\n");
-    printf("----------------------------------------------------\n");
+    printf("\n--- SJF CPU Scheduling Algorithm ---\n");
+    printf("Process\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    printf("--------------------------------------------------------------------\n");
     
     float total_wt = 0, total_tat = 0;
     
     for (int i = 0; i < num_processes; i++) {
-        printf("P%d\t%d\t\t%d\t\t%d\n",
+        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n",
                processes[i].id,
+               processes[i].arrival_time,
                processes[i].burst_time,
                processes[i].waiting_time,
                processes[i].turnaround_time);
@@ -173,7 +676,7 @@ void display_results() {
         total_tat += processes[i].turnaround_time;
     }
     
-    printf("----------------------------------------------------\n");
+    printf("--------------------------------------------------------------------\n");
     printf("Average Waiting Time: %.2f\n", total_wt / num_processes);
     printf("Average Turnaround Time: %.2f\n", total_tat / num_processes);
 }
@@ -186,16 +689,21 @@ int main() {
 }
 
 /*
-Priority CPU Scheduling Algorithm
+Problem Statement 5: Priority Scheduling (Non-Preemptive)
+Write a program to simulate the Priority Scheduling (Non-Preemptive) algorithm.
+Each process should have an associated priority value, and the scheduler should select the process with the highest priority for execution next.
+Compute and display the waiting time, turnaround time, and average times for all processes.
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
 
 struct Process {
     int id;
+    int arrival_time;
     int burst_time;
-    int priority;
+    int priority; // Priority of the process
     int waiting_time;
     int turnaround_time;
     int completed;
@@ -205,15 +713,22 @@ struct Process processes[MAX_PROCESSES];
 int num_processes = 0;
 
 void initialize_processes() {
-    printf("=== Priority (Non-Preemptive) Scheduling ===\n\n");
+    printf("=== Priority Scheduling (Non-Preemptive) ===\n\n");
     printf("Enter number of processes (max %d): ", MAX_PROCESSES);
     scanf("%d", &num_processes);
     
+    if (num_processes <= 0 || num_processes > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        exit(1);
+    }
+    
     for (int i = 0; i < num_processes; i++) {
         processes[i].id = i + 1;
+        printf("Enter arrival time for Process P%d: ", processes[i].id);
+        scanf("%d", &processes[i].arrival_time);
         printf("Enter burst time for Process P%d: ", processes[i].id);
         scanf("%d", &processes[i].burst_time);
-        printf("Enter priority for Process P%d: ", processes[i].id);
+        printf("Enter priority for Process P%d (lower value = higher priority): ", processes[i].id);
         scanf("%d", &processes[i].priority);
         processes[i].completed = 0;
         processes[i].waiting_time = 0;
@@ -223,52 +738,51 @@ void initialize_processes() {
 
 void calculate_priority() {
     int current_time = 0;
-    int completed = 0;
+    int completed_processes = 0;
     
-    while (completed != num_processes) {
-        int highest_priority = -1;
-        int max_priority = 9999;
-        
+    while (completed_processes < num_processes) {
+        int highest_priority = 9999;
+        int idx = -1;
         for (int i = 0; i < num_processes; i++) {
-            if (processes[i].completed == 0 && processes[i].priority < max_priority) {
-                max_priority = processes[i].priority;
-                highest_priority = i;
+            if (processes[i].arrival_time <= current_time && 
+                !processes[i].completed && 
+                processes[i].priority < highest_priority) {
+                highest_priority = processes[i].priority;
+                idx = i;
             }
         }
-        
-        if (highest_priority == -1) {
+        if (idx == -1) {
             current_time++;
             continue;
         }
-        
-        processes[highest_priority].waiting_time = current_time;
-        current_time += processes[highest_priority].burst_time;
-        processes[highest_priority].turnaround_time = current_time;
-        processes[highest_priority].completed = 1;
-        completed++;
+        // Schedule the process with highest priority
+        current_time += processes[idx].burst_time;
+        processes[idx].waiting_time = current_time - processes[idx].arrival_time - processes[idx].burst_time;
+        if (processes[idx].waiting_time < 0) processes[idx].waiting_time = 0;
+        processes[idx].turnaround_time = processes[idx].waiting_time + processes[idx].burst_time;
+        processes[idx].completed = 1;
+        completed_processes++;
     }
 }
 
 void display_results() {
-    printf("\n--- Priority Scheduling Results ---\n");
-    printf("Process\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
-    printf("----------------------------------------------------------------\n");
+    printf("\n--- Priority Scheduling (Non-Preemptive) Results ---\n");
+    printf("Process\tArrival Time\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
+    printf("-----------------------------------------------------------------------------\n");
     
     float total_wt = 0, total_tat = 0;
-    
     for (int i = 0; i < num_processes; i++) {
-        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n",
+        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",
                processes[i].id,
+               processes[i].arrival_time,
                processes[i].burst_time,
                processes[i].priority,
                processes[i].waiting_time,
                processes[i].turnaround_time);
-        
         total_wt += processes[i].waiting_time;
         total_tat += processes[i].turnaround_time;
     }
-    
-    printf("----------------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------------------\n");
     printf("Average Waiting Time: %.2f\n", total_wt / num_processes);
     printf("Average Turnaround Time: %.2f\n", total_tat / num_processes);
 }
@@ -279,22 +793,24 @@ int main() {
     display_results();
     return 0;
 }
-
 /*
-Round Robin CPU Scheduling Algorithm
+Problem Statement 6: Round Robin (RR) Scheduling
+Write a program to simulate the Round Robin (Preemptive) CPU scheduling algorithm.
+The program should take time quantum as input and schedule processes in a cyclic order.
+Display the Gantt chart, waiting time, turnaround time, and average values for all processes.
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
 
 struct Process {
     int id;
-    int burst_time;
     int arrival_time;
+    int burst_time;
     int remaining_time;
     int waiting_time;
     int turnaround_time;
-    int completed;
 };
 
 struct Process processes[MAX_PROCESSES];
@@ -302,13 +818,15 @@ int num_processes = 0;
 int time_quantum = 0;
 
 void initialize_processes() {
-    printf("=== Round Robin (Preemptive) Scheduling ===\n\n");
+    printf("=== Round Robin Scheduling ===\n\n");
     printf("Enter number of processes (max %d): ", MAX_PROCESSES);
     scanf("%d", &num_processes);
-    
-    printf("Enter time quantum: ");
-    scanf("%d", &time_quantum);
-    
+
+    if (num_processes <= 0 || num_processes > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        exit(1);
+    }
+
     for (int i = 0; i < num_processes; i++) {
         processes[i].id = i + 1;
         printf("Enter arrival time for Process P%d: ", processes[i].id);
@@ -316,10 +834,12 @@ void initialize_processes() {
         printf("Enter burst time for Process P%d: ", processes[i].id);
         scanf("%d", &processes[i].burst_time);
         processes[i].remaining_time = processes[i].burst_time;
-        processes[i].completed = 0;
         processes[i].waiting_time = 0;
         processes[i].turnaround_time = 0;
     }
+
+    printf("Enter Time Quantum: ");
+    scanf("%d", &time_quantum);
 }
 
 void calculate_rr() {
@@ -327,71 +847,104 @@ void calculate_rr() {
     int completed = 0;
     int queue[MAX_PROCESSES];
     int front = 0, rear = 0;
-    int in_queue[MAX_PROCESSES] = {0};
-    
+    int visited[MAX_PROCESSES] = {0};
+
+    // Enqueue processes that arrive at time 0 initially
     for (int i = 0; i < num_processes; i++) {
-        if (processes[i].arrival_time <= current_time && !in_queue[i]) {
+        if (processes[i].arrival_time == 0) {
             queue[rear++] = i;
-            in_queue[i] = 1;
+            visited[i] = 1;
         }
     }
-    
-    while (completed != num_processes) {
+
+    // For Gantt chart storage: record each executed process and end time
+    int gantt_processes;
+    int gantt_time;
+    int gantt_idx = 0;
+
+    while (completed < num_processes) {
         if (front == rear) {
+            // No process in queue, increment time and check for new arrivals
             current_time++;
             for (int i = 0; i < num_processes; i++) {
-                if (processes[i].arrival_time <= current_time && !in_queue[i] && processes[i].remaining_time > 0) {
+                if (!visited[i] && processes[i].arrival_time <= current_time) {
                     queue[rear++] = i;
-                    in_queue[i] = 1;
+                    visited[i] = 1;
                 }
             }
             continue;
         }
-        
-        int current = queue[front++];
-        in_queue[current] = 0;
-        
-        int exec_time = (processes[current].remaining_time > time_quantum) ? time_quantum : processes[current].remaining_time;
-        processes[current].remaining_time -= exec_time;
+
+        int idx = queue[front++];
+        int exec_time = (processes[idx].remaining_time < time_quantum) ? processes[idx].remaining_time : time_quantum;
+
+        gantt_processes[gantt_idx] = processes[idx].id;
+        gantt_time[gantt_idx] = current_time + exec_time;
+        gantt_idx++;
+
         current_time += exec_time;
-        
+        processes[idx].remaining_time -= exec_time;
+
+        // Check for new arrivals during execution
         for (int i = 0; i < num_processes; i++) {
-            if (processes[i].arrival_time <= current_time && !in_queue[i] && processes[i].remaining_time > 0 && i != current) {
+            if (!visited[i] && processes[i].arrival_time <= current_time) {
                 queue[rear++] = i;
-                in_queue[i] = 1;
+                visited[i] = 1;
             }
         }
-        
-        if (processes[current].remaining_time > 0) {
-            queue[rear++] = current;
-            in_queue[current] = 1;
+
+        if (processes[idx].remaining_time > 0) {
+            queue[rear++] = idx; // re-enqueue process if not finished
         } else {
             completed++;
-            processes[current].turnaround_time = current_time - processes[current].arrival_time;
-            processes[current].waiting_time = processes[current].turnaround_time - processes[current].burst_time;
+            processes[idx].turnaround_time = current_time - processes[idx].arrival_time;
+            processes[idx].waiting_time = processes[idx].turnaround_time - processes[idx].burst_time;
+            if (processes[idx].waiting_time < 0) processes[idx].waiting_time = 0;
         }
     }
+
+    // Display Gantt chart
+    printf("\nGantt Chart:\n ");
+    for (int i = 0; i < gantt_idx; i++) {
+        printf("--------");
+    }
+    printf("\n|");
+
+    for (int i = 0; i < gantt_idx; i++) {
+        printf("  P%d   |", gantt_processes[i]);
+    }
+    printf("\n ");
+
+    for (int i = 0; i < gantt_idx; i++) {
+        printf("--------");
+    }
+    printf("\n0");
+
+    for (int i = 0; i < gantt_idx; i++) {
+        printf("       %d", gantt_time[i]);
+    }
+    printf("\n");
 }
 
 void display_results() {
     printf("\n--- Round Robin Scheduling Results ---\n");
-    printf("Process\tBurst Time\tWaiting Time\tTurnaround Time\n");
-    printf("----------------------------------------------------\n");
-    
+    printf("Process\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    printf("------------------------------------------------------------------\n");
     float total_wt = 0, total_tat = 0;
-    
+
     for (int i = 0; i < num_processes; i++) {
-        printf("P%d\t%d\t\t%d\t\t%d\n",
+        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n",
                processes[i].id,
+               processes[i].arrival_time,
                processes[i].burst_time,
                processes[i].waiting_time,
                processes[i].turnaround_time);
-        
+
         total_wt += processes[i].waiting_time;
         total_tat += processes[i].turnaround_time;
     }
-    
-    printf("----------------------------------------------------\n");
+
+    printf("------------------------------------------------------------------\n");
     printf("Average Waiting Time: %.2f\n", total_wt / num_processes);
     printf("Average Turnaround Time: %.2f\n", total_tat / num_processes);
 }
@@ -402,429 +955,678 @@ int main() {
     display_results();
     return 0;
 }
-
 /*
-First Fit Memory Allocation Algorithm
+Problem Statement 7: Memory Allocation – First Fit
+Write a program to simulate First Fit memory allocation strategy.
+The program should allocate each process to the first available memory block that is large enough to accommodate it.
+Display the memory allocation table and identify any unused or fragmented memory.
 */
+
 #include <stdio.h>
 #define MAX_BLOCKS 10
 #define MAX_PROCESSES 10
 
-int blocks[MAX_BLOCKS];
-int processes[MAX_PROCESSES];
-int block_allocation[MAX_PROCESSES];
-int num_blocks, num_processes;
+int main() {
+    int block_sizes[MAX_BLOCKS], process_sizes[MAX_PROCESSES];
+    int block_count, process_count;
+    int allocation[MAX_PROCESSES]; // allocation[i] holds index of block allocated to process i, -1 if none
 
-void initialize() {
-    printf("=== First Fit Memory Allocation ===\n\n");
-    printf("Enter number of memory blocks: ");
-    scanf("%d", &num_blocks);
-    printf("Enter size of each memory block:\n");
-    for(int i = 0; i < num_blocks; i++) {
-        printf("Block %d: ", i+1);
-        scanf("%d", &blocks[i]);
+    printf("Enter number of memory blocks (max %d): ", MAX_BLOCKS);
+    scanf("%d", &block_count);
+    if (block_count <= 0 || block_count > MAX_BLOCKS) {
+        printf("Invalid number of blocks. Exiting.\n");
+        return 1;
     }
-    printf("Enter number of processes: ");
-    scanf("%d", &num_processes);
-    printf("Enter size of each process:\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("Process %d: ", i+1);
-        scanf("%d", &processes[i]);
-        block_allocation[i] = -1;
-    }
-}
 
-void first_fit() {
-    for(int i = 0; i < num_processes; i++) {
-        for(int j = 0; j < num_blocks; j++) {
-            if(blocks[j] >= processes[i]) {
-                block_allocation[i] = j + 1;
-                blocks[j] -= processes[i];
+    printf("Enter sizes of memory blocks:\n");
+    for (int i = 0; i < block_count; i++) {
+        printf("Block %d size: ", i+1);
+        scanf("%d", &block_sizes[i]);
+    }
+
+    printf("Enter number of processes (max %d): ", MAX_PROCESSES);
+    scanf("%d", &process_count);
+    if (process_count <= 0 || process_count > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter sizes of processes:\n");
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d size: ", i+1);
+        scanf("%d", &process_sizes[i]);
+        allocation[i] = -1; // Initialize all to not allocated
+    }
+
+    // First Fit allocation
+    for (int i = 0; i < process_count; i++) {
+        for (int j = 0; j < block_count; j++) {
+            if (block_sizes[j] >= process_sizes[i]) {
+                allocation[i] = j;
+                block_sizes[j] -= process_sizes[i]; // Reduce available size of block
                 break;
             }
         }
     }
-}
 
-void display_results() {
-    printf("\nProcess No.\tProcess Size\tBlock no.\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("%d\t\t%d\t\t", i+1, processes[i]);
-        if(block_allocation[i] != -1)
-            printf("%d\n", block_allocation[i]);
-        else
-            printf("Not Allocated\n");
+    // Display allocation results
+    printf("\nProcess No.\tProcess Size\tBlock No.\tBlock Remaining\n");
+    printf("------------------------------------------------------\n");
+    for (int i = 0; i < process_count; i++) {
+        if (allocation[i] != -1) {
+            printf("%d\t\t%d\t\t%d\t\t%d\n",
+                   i + 1,
+                   process_sizes[i],
+                   allocation[i] + 1,
+                   block_sizes[allocation[i]]);
+        } else {
+            printf("%d\t\t%d\t\t%s\t\t%s\n",
+                   i + 1,
+                   process_sizes[i],
+                   "Not Allocated",
+                   "N/A");
+        }
     }
-}
 
-int main() {
-    initialize();
-    first_fit();
-    display_results();
+    // Display unused or fragmented memory in blocks
+    printf("\nUnused / Fragmented Memory in Blocks:\n");
+    int total_fragmented = 0;
+    for (int i = 0; i < block_count; i++) {
+        if (block_sizes[i] > 0) {
+            printf("Block %d: %d units\n", i + 1, block_sizes[i]);
+            total_fragmented += block_sizes[i];
+        }
+    }
+    if (total_fragmented == 0) {
+        printf("No unused or fragmented memory remaining.\n");
+    }
+
     return 0;
 }
 
 /*
-Best Fit Memory Allocation Algorithm
+Problem Statement 8: Memory Allocation – Best Fit
+Write a program to simulate Best Fit memory allocation strategy.
+The program should allocate each process to the smallest available block that can hold it.
+Display the final allocation and show internal fragmentation if any.
 */
+
 #include <stdio.h>
 #define MAX_BLOCKS 10
 #define MAX_PROCESSES 10
 
-int blocks[MAX_BLOCKS];
-int processes[MAX_PROCESSES];
-int block_allocation[MAX_PROCESSES];
-int num_blocks, num_processes;
+int main() {
+    int block_sizes[MAX_BLOCKS], original_block_sizes[MAX_BLOCKS], process_sizes[MAX_PROCESSES];
+    int block_count, process_count;
+    int allocation[MAX_PROCESSES]; // allocation[i] holds index of block allocated to process i, -1 if none
 
-void initialize() {
-    printf("=== Best Fit Memory Allocation ===\n\n");
-    printf("Enter number of memory blocks: ");
-    scanf("%d", &num_blocks);
-    printf("Enter size of each memory block:\n");
-    for(int i = 0; i < num_blocks; i++) {
-        printf("Block %d: ", i+1);
-        scanf("%d", &blocks[i]);
+    printf("Enter number of memory blocks (max %d): ", MAX_BLOCKS);
+    scanf("%d", &block_count);
+    if (block_count <= 0 || block_count > MAX_BLOCKS) {
+        printf("Invalid number of blocks. Exiting.\n");
+        return 1;
     }
-    printf("Enter number of processes: ");
-    scanf("%d", &num_processes);
-    printf("Enter size of each process:\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("Process %d: ", i+1);
-        scanf("%d", &processes[i]);
-        block_allocation[i] = -1;
-    }
-}
 
-void best_fit() {
-    for(int i = 0; i < num_processes; i++) {
+    printf("Enter sizes of memory blocks:\n");
+    for (int i = 0; i < block_count; i++) {
+        printf("Block %d size: ", i + 1);
+        scanf("%d", &block_sizes[i]);
+        original_block_sizes[i] = block_sizes[i]; // Store original block size for fragmentation calculation
+    }
+
+    printf("Enter number of processes (max %d): ", MAX_PROCESSES);
+    scanf("%d", &process_count);
+    if (process_count <= 0 || process_count > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter sizes of processes:\n");
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d size: ", i + 1);
+        scanf("%d", &process_sizes[i]);
+        allocation[i] = -1; // Initialize all to not allocated
+    }
+
+    // Best Fit allocation
+    for (int i = 0; i < process_count; i++) {
         int best_idx = -1;
-        for(int j = 0; j < num_blocks; j++) {
-            if(blocks[j] >= processes[i]) {
-                if(best_idx == -1 || blocks[j] < blocks[best_idx]) {
+        for (int j = 0; j < block_count; j++) {
+            if (block_sizes[j] >= process_sizes[i]) {
+                if (best_idx == -1 || block_sizes[j] < block_sizes[best_idx]) {
                     best_idx = j;
                 }
             }
         }
-        if(best_idx != -1) {
-            block_allocation[i] = best_idx + 1;
-            blocks[best_idx] -= processes[i];
+        if (best_idx != -1) {
+            allocation[i] = best_idx;
+            block_sizes[best_idx] -= process_sizes[i]; // Reduce available size of block
         }
     }
-}
 
-void display_results() {
-    printf("\nProcess No.\tProcess Size\tBlock no.\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("%d\t\t%d\t\t", i+1, processes[i]);
-        if(block_allocation[i] != -1)
-            printf("%d\n", block_allocation[i]);
-        else
-            printf("Not Allocated\n");
+    // Display allocation results
+    printf("\nProcess No.\tProcess Size\tBlock No.\tInternal Fragmentation\n");
+    printf("----------------------------------------------------------------\n");
+    int total_fragmentation = 0;
+    for (int i = 0; i < process_count; i++) {
+        if (allocation[i] != -1) {
+            int frag = block_sizes[allocation[i]];
+            printf("%d\t\t%d\t\t%d\t\t%d\n",
+                   i + 1,
+                   process_sizes[i],
+                   allocation[i] + 1,
+                   frag);
+            total_fragmentation += frag;
+        } else {
+            printf("%d\t\t%d\t\t%s\t\t%s\n",
+                   i + 1,
+                   process_sizes[i],
+                   "Not Allocated",
+                   "N/A");
+        }
     }
-}
 
-int main() {
-    initialize();
-    best_fit();
-    display_results();
+    // Display unused blocks
+    printf("\nUnused blocks and their sizes:\n");
+    int unused_total = 0;
+    for (int i = 0; i < block_count; i++) {
+        if (block_sizes[i] == original_block_sizes[i]) {
+            printf("Block %d: %d units\n", i + 1, block_sizes[i]);
+            unused_total += block_sizes[i];
+        }
+    }
+    if (unused_total == 0) {
+        printf("No unused blocks remaining.\n");
+    }
+
+    printf("\nTotal internal fragmentation: %d units\n", total_fragmentation);
+
     return 0;
 }
-
 /*
-Worst Fit Memory Allocation Algorithm
+Problem Statement 10: Memory Allocation – Worst Fit
+Write a program to simulate Worst Fit memory allocation strategy.
+The program should allocate each process to the largest available memory block.
+Display the memory allocation results and any unused space.
 */
+
 #include <stdio.h>
 #define MAX_BLOCKS 10
 #define MAX_PROCESSES 10
 
-int blocks[MAX_BLOCKS];
-int processes[MAX_PROCESSES];
-int block_allocation[MAX_PROCESSES];
-int num_blocks, num_processes;
+int main() {
+    int block_sizes[MAX_BLOCKS], original_block_sizes[MAX_BLOCKS], process_sizes[MAX_PROCESSES];
+    int block_count, process_count;
+    int allocation[MAX_PROCESSES]; // Holds index of block allocated to process i, -1 if none
 
-void initialize() {
-    printf("=== Worst Fit Memory Allocation ===\n\n");
-    printf("Enter number of memory blocks: ");
-    scanf("%d", &num_blocks);
-    printf("Enter size of each memory block:\n");
-    for(int i = 0; i < num_blocks; i++) {
-        printf("Block %d: ", i+1);
-        scanf("%d", &blocks[i]);
+    printf("Enter number of memory blocks (max %d): ", MAX_BLOCKS);
+    scanf("%d", &block_count);
+    if (block_count <= 0 || block_count > MAX_BLOCKS) {
+        printf("Invalid number of blocks. Exiting.\n");
+        return 1;
     }
-    printf("Enter number of processes: ");
-    scanf("%d", &num_processes);
-    printf("Enter size of each process:\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("Process %d: ", i+1);
-        scanf("%d", &processes[i]);
-        block_allocation[i] = -1;
-    }
-}
 
-void worst_fit() {
-    for(int i = 0; i < num_processes; i++) {
+    printf("Enter sizes of memory blocks:\n");
+    for (int i = 0; i < block_count; i++) {
+        printf("Block %d size: ", i + 1);
+        scanf("%d", &block_sizes[i]);
+        original_block_sizes[i] = block_sizes[i]; // Store for unused space calculation
+    }
+
+    printf("Enter number of processes (max %d): ", MAX_PROCESSES);
+    scanf("%d", &process_count);
+    if (process_count <= 0 || process_count > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter sizes of processes:\n");
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d size: ", i + 1);
+        scanf("%d", &process_sizes[i]);
+        allocation[i] = -1; // Initialize all as not allocated
+    }
+
+    // Worst Fit allocation
+    for (int i = 0; i < process_count; i++) {
         int worst_idx = -1;
-        for(int j = 0; j < num_blocks; j++) {
-            if(blocks[j] >= processes[i]) {
-                if(worst_idx == -1 || blocks[j] > blocks[worst_idx]) {
-                    worst_idx = j;
-                }
+        int max_size = -1;
+        for (int j = 0; j < block_count; j++) {
+            if (block_sizes[j] >= process_sizes[i] && block_sizes[j] > max_size) {
+                max_size = block_sizes[j];
+                worst_idx = j;
             }
         }
-        if(worst_idx != -1) {
-            block_allocation[i] = worst_idx + 1;
-            blocks[worst_idx] -= processes[i];
+        if (worst_idx != -1) {
+            allocation[i] = worst_idx;
+            block_sizes[worst_idx] -= process_sizes[i];
         }
     }
-}
 
-void display_results() {
-    printf("\nProcess No.\tProcess Size\tBlock no.\n");
-    for(int i = 0; i < num_processes; i++) {
-        printf("%d\t\t%d\t\t", i+1, processes[i]);
-        if(block_allocation[i] != -1)
-            printf("%d\n", block_allocation[i]);
-        else
-            printf("Not Allocated\n");
+    // Display allocation results
+    printf("\nProcess No.\tProcess Size\tBlock No.\tFragmentation / Unused Space\n");
+    printf("----------------------------------------------------------------------\n");
+    int total_fragmentation = 0;
+    for (int i = 0; i < process_count; i++) {
+        if (allocation[i] != -1) {
+            int frag = block_sizes[allocation[i]];
+            printf("%d\t\t%d\t\t%d\t\t%d\n", i + 1, process_sizes[i], allocation[i] + 1, frag);
+            total_fragmentation += frag;
+        } else {
+            printf("%d\t\t%d\t\t%s\t\t%s\n", i + 1, process_sizes[i], "Not Allocated", "N/A");
+        }
     }
-}
 
-int main() {
-    initialize();
-    worst_fit();
-    display_results();
+    // Display completely unused blocks
+    printf("\nUnused blocks and their sizes:\n");
+    int unused_total = 0;
+    for (int i = 0; i < block_count; i++) {
+        if (block_sizes[i] == original_block_sizes[i]) {
+            printf("Block %d: %d units\n", i + 1, block_sizes[i]);
+            unused_total += block_sizes[i];
+        }
+    }
+    if (unused_total == 0) {
+        printf("No unused blocks remaining.\n");
+    }
+
+    printf("\nTotal internal fragmentation: %d units\n", total_fragmentation);
+
     return 0;
 }
 
-
 /*
-FIFO Page Replacement Algorithm
+Problem Statement 9: Memory Allocation – Next Fit
+Write a program to simulate Next Fit memory allocation strategy.
+The program should continue searching for the next suitable memory block from the last allocated position instead of starting from the beginning.
+Display the memory allocation table and fragmentation details.
 */
+
 #include <stdio.h>
-#define MAX_FRAMES 10
-#define MAX_PAGES 30
+#define MAX_BLOCKS 10
+#define MAX_PROCESSES 10
 
-int frames[MAX_FRAMES];
-int pages[MAX_PAGES];
-int num_frames, num_pages;
+int main() {
+    int block_sizes[MAX_BLOCKS], original_block_sizes[MAX_BLOCKS], process_sizes[MAX_PROCESSES];
+    int block_count, process_count;
+    int allocation[MAX_PROCESSES]; // allocation[i] holds index of block allocated to process i, -1 if none
 
-void initialize() {
-    printf("=== FIFO Page Replacement ===\n\n");
-    printf("Enter number of frames: ");
-    scanf("%d", &num_frames);
-    printf("Enter number of pages: ");
-    scanf("%d", &num_pages);
-    printf("Enter page reference string: ");
-    for(int i = 0; i < num_pages; i++) {
-        scanf("%d", &pages[i]);
+    printf("Enter number of memory blocks (max %d): ", MAX_BLOCKS);
+    scanf("%d", &block_count);
+    if (block_count <= 0 || block_count > MAX_BLOCKS) {
+        printf("Invalid number of blocks. Exiting.\n");
+        return 1;
     }
-    for(int i = 0; i < num_frames; i++) {
-        frames[i] = -1;
+
+    printf("Enter sizes of memory blocks:\n");
+    for (int i = 0; i < block_count; i++) {
+        printf("Block %d size: ", i + 1);
+        scanf("%d", &block_sizes[i]);
+        original_block_sizes[i] = block_sizes[i]; // Store original size for fragmentation tracking
     }
+
+    printf("Enter number of processes (max %d): ", MAX_PROCESSES);
+    scanf("%d", &process_count);
+    if (process_count <= 0 || process_count > MAX_PROCESSES) {
+        printf("Invalid number of processes. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter sizes of processes:\n");
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d size: ", i + 1);
+        scanf("%d", &process_sizes[i]);
+        allocation[i] = -1; // Initialize all as not allocated
+    }
+
+    int last_allocated = 0; // Last allocated block index
+
+    // Next Fit allocation
+    for (int i = 0; i < process_count; i++) {
+        int allocated = 0;
+        int j = last_allocated;
+        int count = 0;
+        while (count < block_count) {
+            if (block_sizes[j] >= process_sizes[i]) {
+                allocation[i] = j;
+                block_sizes[j] -= process_sizes[i];
+                last_allocated = j;
+                allocated = 1;
+                break;
+            }
+            j = (j + 1) % block_count;
+            count++;
+        }
+        if (!allocated) {
+            allocation[i] = -1; // Not allocated
+        }
+    }
+
+    // Display allocation table
+    printf("\nProcess No.\tProcess Size\tBlock No.\tFragmentation\n");
+    printf("-------------------------------------------------------\n");
+    int total_fragmentation = 0;
+    for (int i = 0; i < process_count; i++) {
+        if (allocation[i] != -1) {
+            int frag = block_sizes[allocation[i]];
+            printf("%d\t\t%d\t\t%d\t\t%d\n", i + 1, process_sizes[i], allocation[i] + 1, frag);
+            total_fragmentation += frag;
+        } else {
+            printf("%d\t\t%d\t\t%s\t\t%s\n", i + 1, process_sizes[i], "Not Allocated", "N/A");
+        }
+    }
+
+    // Display unused blocks
+    printf("\nUnused blocks and their sizes:\n");
+    int unused_total = 0;
+    for (int i = 0; i < block_count; i++) {
+        if (block_sizes[i] == original_block_sizes[i]) {
+            printf("Block %d: %d units\n", i + 1, block_sizes[i]);
+            unused_total += block_sizes[i];
+        }
+    }
+    if (unused_total == 0) {
+        printf("No unused blocks remaining.\n");
+    }
+
+    printf("\nTotal internal fragmentation: %d units\n", total_fragmentation);
+
+    return 0;
 }
 
-void fifo() {
+/*
+Problem Statement 11: Page Replacement – FIFO
+Write a program to simulate the First In First Out (FIFO) page replacement algorithm.
+The program should accept a page reference string and number of frames as input,
+simulate the process of page replacement, and display the total number of page faults.
+*/
+
+#include <stdio.h>
+#define MAX_FRAMES 10
+#define MAX_PAGES 100
+
+int main() {
+    int frames[MAX_FRAMES];
+    int page_string[MAX_PAGES];
+    int num_frames, num_pages;
+    int front = 0, rear = 0;
     int page_faults = 0;
-    int pointer = 0;
-    printf("\nPage Replacement Process:\n");
-    
-    for(int i = 0; i < num_pages; i++) {
+
+    printf("Enter number of frames (max %d): ", MAX_FRAMES);
+    scanf("%d", &num_frames);
+    if (num_frames <= 0 || num_frames > MAX_FRAMES) {
+        printf("Invalid number of frames. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter number of pages in reference string (max %d): ", MAX_PAGES);
+    scanf("%d", &num_pages);
+    if (num_pages <= 0 || num_pages > MAX_PAGES) {
+        printf("Invalid number of pages. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter the page reference string:\n");
+    for (int i = 0; i < num_pages; i++) {
+        printf("Page %d: ", i + 1);
+        scanf("%d", &page_string[i]);
+    }
+
+    // Initialize frames to -1 indicating empty
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+    }
+
+    printf("\nFIFO Page Replacement Process:\n");
+    for (int i = 0; i < num_pages; i++) {
+        int page = page_string[i];
         int found = 0;
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == pages[i]) {
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] == page) {
                 found = 1;
                 break;
             }
         }
-        
-        if(!found) {
-            frames[pointer] = pages[i];
-            pointer = (pointer + 1) % num_frames;
+
+        if (!found) {
+            // Page fault occurs
+            frames[rear] = page;
+            rear = (rear + 1) % num_frames;
             page_faults++;
         }
-        
-        printf("Page %d -> [", pages[i]);
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == -1) printf(" - ");
-            else printf(" %d ", frames[j]);
-        }
-        printf("] %s\n", found ? "Hit" : "Miss");
-    }
-    
-    printf("\nTotal Page Faults: %d\n", page_faults);
-    printf("Hit Ratio: %.2f%%\n", ((num_pages - page_faults) * 100.0) / num_pages);
-    printf("Miss Ratio: %.2f%%\n", (page_faults * 100.0) / num_pages);
-}
 
-int main() {
-    initialize();
-    fifo();
+        // Display frames after each page reference
+        printf("After reference to page %d: ", page);
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] != -1)
+                printf("%d ", frames[j]);
+            else
+                printf("- ");
+        }
+        if (found)
+            printf("[Hit]");
+        else
+            printf("[Page Fault]");
+        printf("\n");
+    }
+
+    printf("\nTotal number of page faults: %d\n", page_faults);
+
     return 0;
 }
 
 
 /*
-LRU Page Replacement Algorithm
+Problem Statement 12: Page Replacement – LRU
+Write a program to simulate the Least Recently Used (LRU) page replacement algorithm.
+The program should display the frame contents after each page reference and the total number of page faults.
 */
+
 #include <stdio.h>
 #define MAX_FRAMES 10
-#define MAX_PAGES 30
+#define MAX_PAGES 100
 
-int frames[MAX_FRAMES];
-int pages[MAX_PAGES];
-int recent[MAX_FRAMES];
-int num_frames, num_pages;
-
-void initialize() {
-    printf("=== LRU Page Replacement ===\n\n");
-    printf("Enter number of frames: ");
-    scanf("%d", &num_frames);
-    printf("Enter number of pages: ");
-    scanf("%d", &num_pages);
-    printf("Enter page reference string: ");
-    for(int i = 0; i < num_pages; i++) {
-        scanf("%d", &pages[i]);
-    }
-    for(int i = 0; i < num_frames; i++) {
-        frames[i] = -1;
-        recent[i] = -1;
-    }
-}
-
-void lru() {
+int main() {
+    int frames[MAX_FRAMES];
+    int page_string[MAX_PAGES];
+    int num_frames, num_pages;
     int page_faults = 0;
-    int time = 0;
-    printf("\nPage Replacement Process:\n");
-    
-    for(int i = 0; i < num_pages; i++) {
-        int found = 0;
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == pages[i]) {
-                found = 1;
-                recent[j] = time++;
+
+    printf("Enter number of frames (max %d): ", MAX_FRAMES);
+    scanf("%d", &num_frames);
+    if (num_frames <= 0 || num_frames > MAX_FRAMES) {
+        printf("Invalid number of frames. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter number of pages in reference string (max %d): ", MAX_PAGES);
+    scanf("%d", &num_pages);
+    if (num_pages <= 0 || num_pages > MAX_PAGES) {
+        printf("Invalid number of pages. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter the page reference string:\n");
+    for (int i = 0; i < num_pages; i++) {
+        printf("Page %d: ", i + 1);
+        scanf("%d", &page_string[i]);
+    }
+
+    // Initialize frames to -1 indicating empty
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+    }
+
+    // Array to keep track of the last used time of each frame
+    int last_used[MAX_FRAMES] = {0};
+
+    for (int i = 0; i < num_pages; i++) {
+        int page = page_string[i];
+        int found = -1;
+
+        // Check if page is already in frame
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] == page) {
+                found = j;
                 break;
             }
         }
-        
-        if(!found) {
+
+        if (found != -1) {
+            // Page hit: update last used time
+            last_used[found] = i;
+            printf("After reference to page %d: ", page);
+            for (int k = 0; k < num_frames; k++) {
+                if (frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf("[Hit]\n");
+        } else {
+            // Page fault
+            page_faults++;
+
+            // Find least recently used frame
             int lru_index = 0;
-            for(int j = 1; j < num_frames; j++) {
-                if(recent[j] < recent[lru_index]) {
+            int min_used = last_used;
+            for (int j = 1; j < num_frames; j++) {
+                if (last_used[j] < min_used) {
+                    min_used = last_used[j];
                     lru_index = j;
                 }
             }
-            frames[lru_index] = pages[i];
-            recent[lru_index] = time++;
-            page_faults++;
-        }
-        
-        printf("Page %d -> [", pages[i]);
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == -1) printf(" - ");
-            else printf(" %d ", frames[j]);
-        }
-        printf("] %s\n", found ? "Hit" : "Miss");
-    }
-    
-    printf("\nTotal Page Faults: %d\n", page_faults);
-    printf("Hit Ratio: %.2f%%\n", ((num_pages - page_faults) * 100.0) / num_pages);
-    printf("Miss Ratio: %.2f%%\n", (page_faults * 100.0) / num_pages);
-}
 
-int main() {
-    initialize();
-    lru();
+            // Replace with new page and update last used time
+            frames[lru_index] = page;
+            last_used[lru_index] = i;
+
+            printf("After reference to page %d: ", page);
+            for (int k = 0; k < num_frames; k++) {
+                if (frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf("[Page Fault]\n");
+        }
+    }
+
+    printf("\nTotal number of page faults: %d\n", page_faults);
+
     return 0;
 }
 
-
 /*
-Optimal Page Replacement Algorithm
+Problem Statement 13: Page Replacement – Optimal
+Write a program to simulate the Optimal Page Replacement algorithm.
+The program should replace the page that will not be used for the longest period of time in the future and display the page replacement steps and page fault count.
 */
+
 #include <stdio.h>
 #define MAX_FRAMES 10
-#define MAX_PAGES 30
+#define MAX_PAGES 100
 
-int frames[MAX_FRAMES];
-int pages[MAX_PAGES];
-int num_frames, num_pages;
+int findOptimal(int frames[], int num_frames, int page_string[], int num_pages, int current_index) {
+    int farthest = current_index;
+    int index = -1;
 
-void initialize() {
-    printf("=== Optimal Page Replacement ===\n\n");
-    printf("Enter number of frames: ");
-    scanf("%d", &num_frames);
-    printf("Enter number of pages: ");
-    scanf("%d", &num_pages);
-    printf("Enter page reference string: ");
-    for(int i = 0; i < num_pages; i++) {
-        scanf("%d", &pages[i]);
-    }
-    for(int i = 0; i < num_frames; i++) {
-        frames[i] = -1;
-    }
-}
-
-int find_optimal(int current) {
-    int optimal_index = -1;
-    int farthest = current;
-    
-    for(int i = 0; i < num_frames; i++) {
+    for (int i = 0; i < num_frames; i++) {
         int j;
-        for(j = current + 1; j < num_pages; j++) {
-            if(frames[i] == pages[j]) {
-                if(j > farthest) {
+        for (j = current_index + 1; j < num_pages; j++) {
+            if (frames[i] == page_string[j]) {
+                if (j > farthest) {
                     farthest = j;
-                    optimal_index = i;
+                    index = i;
                 }
                 break;
             }
         }
-        if(j == num_pages) {
+        // If page not found in future references, return immediately
+        if (j == num_pages)
             return i;
-        }
     }
-    return (optimal_index == -1) ? 0 : optimal_index;
+
+    // If all pages found in future, return the one with farthest use
+    if (index == -1)
+        return 0; // Default to first frame if no farthest found
+    else
+        return index;
 }
 
-void optimal() {
+int main() {
+    int frames[MAX_FRAMES];
+    int page_string[MAX_PAGES];
+    int num_frames, num_pages;
     int page_faults = 0;
-    printf("\nPage Replacement Process:\n");
-    
-    for(int i = 0; i < num_pages; i++) {
+
+    printf("Enter number of frames (max %d): ", MAX_FRAMES);
+    scanf("%d", &num_frames);
+    if (num_frames <= 0 || num_frames > MAX_FRAMES) {
+        printf("Invalid number of frames. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter number of pages in reference string (max %d): ", MAX_PAGES);
+    scanf("%d", &num_pages);
+    if (num_pages <= 0 || num_pages > MAX_PAGES) {
+        printf("Invalid number of pages. Exiting.\n");
+        return 1;
+    }
+
+    printf("Enter the page reference string:\n");
+    for (int i = 0; i < num_pages; i++) {
+        printf("Page %d: ", i + 1);
+        scanf("%d", &page_string[i]);
+    }
+
+    // Initialize frames to -1 indicating empty
+    for (int i = 0; i < num_frames; i++) {
+        frames[i] = -1;
+    }
+
+    int count = 0;
+
+    printf("\nOptimal Page Replacement Process:\n");
+    for (int i = 0; i < num_pages; i++) {
+        int page = page_string[i];
         int found = 0;
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == pages[i]) {
+
+        // Check if page already in frames
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] == page) {
                 found = 1;
                 break;
             }
         }
-        
-        if(!found) {
-            if(i < num_frames) {
-                frames[i] = pages[i];
-            } else {
-                int index = find_optimal(i);
-                frames[index] = pages[i];
-            }
-            page_faults++;
-        }
-        
-        printf("Page %d -> [", pages[i]);
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == -1) printf(" - ");
-            else printf(" %d ", frames[j]);
-        }
-        printf("] %s\n", found ? "Hit" : "Miss");
-    }
-    
-    printf("\nTotal Page Faults: %d\n", page_faults);
-    printf("Hit Ratio: %.2f%%\n", ((num_pages - page_faults) * 100.0) / num_pages);
-    printf("Miss Ratio: %.2f%%\n", (page_faults * 100.0) / num_pages);
-}
 
-int main() {
-    initialize();
-    optimal();
+        if (!found) {
+            page_faults++;
+            if (count < num_frames) {
+                frames[count++] = page;
+            } else {
+                int replace_index = findOptimal(frames, num_frames, page_string, num_pages, i);
+                frames[replace_index] = page;
+            }
+        }
+
+        // Display frames after each page reference
+        printf("After reference to page %d: ", page);
+        for (int j = 0; j < num_frames; j++) {
+            if (frames[j] != -1)
+                printf("%d ", frames[j]);
+            else
+                printf("- ");
+        }
+        if (found)
+            printf("[Hit]");
+        else
+            printf("[Page Fault]");
+        printf("\n");
+    }
+
+    printf("\nTotal number of page faults: %d\n", page_faults);
+
     return 0;
 }
 
