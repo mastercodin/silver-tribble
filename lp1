@@ -429,7 +429,7 @@ public class TwoPassMacroProcessor {
 
 
 /* 
-Problem Statement: First Come First Serve (FCFS) CPU Scheduling
+Problem Statement 3: First Come First Serve (FCFS) CPU Scheduling
 Write a program to simulate the First Come First Serve (FCFS) CPU scheduling algorithm.
 The program should accept process details such as Process ID, Arrival Time, and Burst Time and compute the Waiting Time and Turnaround Time for each process. Display the Gantt chart, average waiting time, and average turnaround time.
 
