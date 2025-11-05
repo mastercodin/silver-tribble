@@ -4,7 +4,7 @@ Design suitable Data structures and implement Pass-I and Pass-II of a two-pass a
 Implementation should consist of a few instructions from each category and few assembler directives.
 The output of Pass-I (intermediate code file and symbol table) should be input for Pass-II.
 
-SOURCE.ASM COPY THIS
+SOURCE.ASM COPY THIS AND SAVE FILE TO Source.asm
 
 
 START 100
@@ -274,7 +274,7 @@ Design suitable data structures and implement Pass-I and Pass-II of a two-pass m
 The output of Pass-I (MNT, MDT and intermediate code file without any macro definitions) should be input for Pass-II.
 
 
-SOURCE.ASM COPY THIS
+SOURCE.ASM COPY THIS AND SAVE FILE TO Source.asm
 
 
 START 100
