@@ -234,7 +234,7 @@ public class TwoPassAssembler {
                 machineWriter.newLine();
             }
         }
-    }
+    }    
 
     public static void main(String[] args) {
         String source = "source.asm";
@@ -274,175 +274,161 @@ Design suitable data structures and implement Pass-I and Pass-II of a two-pass m
 The output of Pass-I (MNT, MDT and intermediate code file without any macro definitions) should be input for Pass-II.
 
 
-SOURCE.ASM COPY THIS AND SAVE FILE TO Source.asm
+SOURCE.ASM COPY THIS AND SAVE FILE TO Source.txt
 
-
-START 100
-LOOP LDA ALPHA
-STA BETA
-ADD GAMMA
-ALPHA DC 5
-BETA DS 1
-GAMMA DC 10
+MACRO
+INCR &A
+LOAD &A
+ADD ONE
+STORE &A
+MEND
+START
+INCR COUNT
 END
 
 */
 
+// Practical No. 2
 
 import java.io.*;
 import java.util.*;
 
-class MNTEntry {
-    String macroName;
-    int mdtIndex;
-
-    MNTEntry(String macroName, int mdtIndex) {
-        this.macroName = macroName;
-        this.mdtIndex = mdtIndex;
-    }
-}
-
 public class TwoPassMacroProcessor {
-    static List<MNTEntry> MNT = new ArrayList<>();
-    static List<String> MDT = new ArrayList<>();
-    static List<String> intermediateCode = new ArrayList<>();
 
-    static void pass1(String sourceFile, String interFile, String mntFile, String mdtFile) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(sourceFile));
-        BufferedWriter interWriter = new BufferedWriter(new FileWriter(interFile));
-        BufferedWriter mntWriter = new BufferedWriter(new FileWriter(mntFile));
-        BufferedWriter mdtWriter = new BufferedWriter(new FileWriter(mdtFile));
+    static class MNTEntry {
+        String name;
+        int mdtIndex;
+        int paramCount;
+
+        MNTEntry(String name, int mdtIndex, int paramCount) {
+            this.name = name;
+            this.mdtIndex = mdtIndex;
+            this.paramCount = paramCount;
+        }
+    }
+
+    static List<String> MDT = new ArrayList<>();
+    static Map<String, MNTEntry> MNT = new HashMap<>();
+
+    static final String MACRO = "MACRO";
+    static final String MEND = "MEND";
+
+    public static void main(String[] args) throws IOException {
+        String inputFile = "input.asm";
+        String intermediateFile = "intermediate.asm";
+        String outputFile = "output.asm";
+
+        passOne(inputFile, intermediateFile);
+        passTwo(intermediateFile, outputFile);
+    }
+
+    static void passOne(String inputFile, String intermediateFile) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(inputFile));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(intermediateFile));
 
         String line;
-        boolean inMacro = false;
-        String currentMacro = null;
-        int mdtIndex = 0;
+        boolean inMacroDef = false;
+        String macroName = null;
 
         while ((line = br.readLine()) != null) {
-            String trimmedLine = line.trim();
-            if (trimmedLine.isEmpty()) continue;
+            line = line.trim();
+            if (line.isEmpty()) continue;
 
-            String[] parts = trimmedLine.split("\\s+");
-            String firstWord = parts[0];
+            String[] tokens = line.split("\\s+");
 
-            if (firstWord.equalsIgnoreCase("MACRO")) {
-                inMacro = true;
-                continue; // Skip MACRO line
+            if (tokens[0].equalsIgnoreCase(MACRO)) {
+                line = br.readLine();
+                if (line == null) break;
+                line = line.trim();
+
+                String[] headerTokens = line.split("\\s+", 2);
+                macroName = headerTokens[0];
+                String[] params = new String[0];
+
+                if (headerTokens.length > 1) {
+                    params = headerTokens[1].split(",");
+                }
+
+                inMacroDef = true;
+                MNT.put(macroName, new MNTEntry(macroName, MDT.size(), params.length));
+                MDT.add(line);
+                continue;
             }
 
-            if (inMacro) {
-                if (currentMacro == null) {
-
-                    currentMacro = parts[0];
-
-
-                    MNT.add(new MNTEntry(currentMacro, MDT.size()));
-
-
-                    MDT.add(trimmedLine);
-
-                } else if (firstWord.equalsIgnoreCase("MEND")) {
-
-                    MDT.add("MEND");
-                    inMacro = false;
-                    currentMacro = null;
+            if (inMacroDef) {
+                if (tokens[0].equalsIgnoreCase(MEND)) {
+                    MDT.add(MEND);
+                    inMacroDef = false;
+                    continue;
                 } else {
+                    MNTEntry entry = MNT.get(macroName);
+                    String defLine = line;
+                    String headerLine = MDT.get(entry.mdtIndex);
+                    String[] headerParts = headerLine.split("\\s+", 2);
 
-                    MDT.add(trimmedLine);
+                    if (headerParts.length > 1) {
+                        String[] paramNames = headerParts[1].split(",");
+                        for (int p = 0; p < paramNames.length; p++) {
+                            String pname = paramNames[p].trim();
+                            if (!pname.isEmpty()) {
+                                defLine = defLine.replaceAll("\\b" + pname + "\\b", "#" + (p + 1));
+                            }
+                        }
+                    }
+                    MDT.add(defLine);
                 }
             } else {
-
-                interWriter.write(trimmedLine);
-                interWriter.newLine();
+                bw.write(line);
+                bw.newLine();
             }
-        }
-
-
-        for (MNTEntry entry : MNT) {
-            mntWriter.write(entry.macroName + "\t" + entry.mdtIndex);
-            mntWriter.newLine();
-        }
-
-        for (String mdtLine : MDT) {
-            mdtWriter.write(mdtLine);
-            mdtWriter.newLine();
         }
 
         br.close();
-        interWriter.close();
-        mntWriter.close();
-        mdtWriter.close();
+        bw.close();
     }
 
-
-    static void pass2(String interFile, String mntFile, String mdtFile, String outputFile) throws IOException {
-        BufferedReader interReader = new BufferedReader(new FileReader(interFile));
-        BufferedReader mntReader = new BufferedReader(new FileReader(mntFile));
-        BufferedReader mdtReader = new BufferedReader(new FileReader(mdtFile));
-        BufferedWriter outputWriter = new BufferedWriter(new FileWriter(outputFile));
-
-
-        Map<String, Integer> mntMap = new HashMap<>();
-        String mntLine;
-        while ((mntLine = mntReader.readLine()) != null) {
-            String[] parts = mntLine.trim().split("\\s+");
-            mntMap.put(parts[0], Integer.parseInt(parts[1]));
-        }
-
-
-        List<String> mdtList = new ArrayList<>();
-        String mdtLine;
-        while ((mdtLine = mdtReader.readLine()) != null) {
-            mdtList.add(mdtLine);
-        }
+    static void passTwo(String intermediateFile, String outputFile) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(intermediateFile));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
 
         String line;
-        while ((line = interReader.readLine()) != null) {
-            String trimmedLine = line.trim();
-            if (trimmedLine.isEmpty()) {
-                outputWriter.newLine();
+
+        while ((line = br.readLine()) != null) {
+            line = line.trim();
+            if (line.isEmpty()) {
+                bw.newLine();
                 continue;
             }
-            String[] parts = trimmedLine.split("\\s+");
-            String possibleMacro = parts[0];
 
-            if (mntMap.containsKey(possibleMacro)) {
+            String[] tokens = line.split("\\s+");
+            String firstToken = tokens[0];
 
-                int mdtIndex = mntMap.get(possibleMacro);
+            if (MNT.containsKey(firstToken)) {
+                MNTEntry entry = MNT.get(firstToken);
+                String argsPart = line.substring(firstToken.length()).trim();
+                String[] args = argsPart.isEmpty() ? new String[0] : argsPart.split("\\s*,\\s*");
 
-                while (!mdtList.get(mdtIndex).equalsIgnoreCase("MEND")) {
-                    outputWriter.write(mdtList.get(mdtIndex));
-                    outputWriter.newLine();
+                int mdtIndex = entry.mdtIndex + 1;
+                while (mdtIndex < MDT.size() && !MDT.get(mdtIndex).equalsIgnoreCase(MEND)) {
+                    String mdtLine = MDT.get(mdtIndex);
+                    for (int i = 0; i < args.length; i++) {
+                        mdtLine = mdtLine.replaceAll("\\#" + (i + 1), args[i].trim());
+                    }
+                    bw.write(mdtLine);
+                    bw.newLine();
                     mdtIndex++;
                 }
             } else {
-
-                outputWriter.write(trimmedLine);
-                outputWriter.newLine();
+                bw.write(line);
+                bw.newLine();
             }
         }
 
-        interReader.close();
-        mntReader.close();
-        mdtReader.close();
-        outputWriter.close();
-    }
-
-    public static void main(String[] args) {
-        try {
-            pass1("source.asm", "intermediate.asm", "mnt.txt", "mdt.txt");
-            pass2("intermediate.asm", "mnt.txt", "mdt.txt", "expanded.asm");
-
-            System.out.println("Two-pass Macro processing completed.");
-            System.out.println("Intermediate code: intermediate.asm");
-            System.out.println("Macro Name Table: mnt.txt");
-            System.out.println("Macro Definition Table: mdt.txt");
-            System.out.println("Expanded code after macro expansion: expanded.asm");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        br.close();
+        bw.close();
     }
 }
+
 
 
 /* 
