@@ -3,268 +3,181 @@ Problem Statement 1: Two-Pass Assembler
 Design suitable Data structures and implement Pass-I and Pass-II of a two-pass assembler for pseudo-machine.
 Implementation should consist of a few instructions from each category and few assembler directives.
 The output of Pass-I (intermediate code file and symbol table) should be input for Pass-II.
-
-SOURCE.ASM COPY THIS AND SAVE FILE TO Source.asm
-
-
-START 100
-LOOP LDA ALPHA
-STA BETA
-ADD GAMMA
-ALPHA DC 5
-BETA DS 1
-GAMMA DC 10
-END
-
 */
+
+// SimpleTwoPassAssembler.java
+
 import java.io.*;
 import java.util.*;
 
-class Symbol {
-    String name;
-    int address;
-    boolean isDefined;
+public class SimpleTwoPassAssembler {
 
-    Symbol(String name, int address, boolean defined) {
-        this.name = name;
-        this.address = address;
-        this.isDefined = defined;
-    }
-}
-
-public class TwoPassAssembler {
-
-    private static final Map<String, String[]> OP_TABLE = new HashMap<>();
+    // Opcode table
+    static Map<String, String> OPTAB = new HashMap<>();
     static {
-        OP_TABLE.put("LDA", new String[]{"IS", "01"});
-        OP_TABLE.put("STA", new String[]{"IS", "02"});
-        OP_TABLE.put("ADD", new String[]{"IS", "03"});
-        OP_TABLE.put("SUB", new String[]{"IS", "04"});
-        OP_TABLE.put("MOV", new String[]{"IS", "07"});
-        OP_TABLE.put("START", new String[]{"AD", "01"});
-        OP_TABLE.put("END", new String[]{"AD", "02"});
-        OP_TABLE.put("DC", new String[]{"DL", "01"});
-        OP_TABLE.put("DS", new String[]{"DL", "02"});
+        OPTAB.put("MOVER", "04");
+        OPTAB.put("MOVEM", "05");
+        OPTAB.put("ADD", "01");
+        OPTAB.put("SUB", "02");
+        OPTAB.put("STOP", "00");
     }
 
-    private static final Map<String, Symbol> SYMBOL_TABLE = new LinkedHashMap<>();
-    private static List<String> INTERMEDIATE = new ArrayList<>();
-    private static int LOC_COUNTER = 0;
-
-    private static int getOrCreateSymbolIndex(String name) {
-        if (!SYMBOL_TABLE.containsKey(name)) {
-            SYMBOL_TABLE.put(name, new Symbol(name, -1, false));
-        }
-        int idx = 1;
-        for (String key : SYMBOL_TABLE.keySet()) {
-            if (key.equals(name)) break;
-            idx++;
-        }
-        return idx;
-    }
-
-    public static void pass1(String sourceFile, String interFile, String symFile) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(sourceFile));
-             BufferedWriter interWriter = new BufferedWriter(new FileWriter(interFile));
-             BufferedWriter symWriter = new BufferedWriter(new FileWriter(symFile))) {
-
-            String line;
-            LOC_COUNTER = 0;
-
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith(";")) continue;
-
-                String[] tokens = line.split("\\s+");
-                String label = null, opcode = null, operand = null;
-
-                int i = 0;
-
-                if (tokens.length > 0 && tokens[0].endsWith(":")) {
-                    label = tokens[0].substring(0, tokens[0].length() - 1);
-                    i = 1;
-                } else if (tokens.length > 1 && !OP_TABLE.containsKey(tokens[0])) {
-                    label = tokens[0];
-                    i = 1;
-                }
-
-                if (i < tokens.length) opcode = tokens[i++];
-                if (i < tokens.length) operand = tokens[i];
-
-
-                if (label != null && !label.isEmpty()) {
-                    if (SYMBOL_TABLE.containsKey(label)) {
-                        Symbol existingSym = SYMBOL_TABLE.get(label);
-                        if (existingSym.isDefined) {
-                            System.err.println("Error: Duplicate definition of symbol '" + label + "' at LC " + LOC_COUNTER);
-                        } else {
-                            existingSym.address = LOC_COUNTER;
-                            existingSym.isDefined = true;
-                        }
-                    } else {
-                        SYMBOL_TABLE.put(label, new Symbol(label, LOC_COUNTER, true));
-                    }
-                }
-
-
-                if (opcode == null || !OP_TABLE.containsKey(opcode)) {
-                    System.err.println("Error: Invalid/missing opcode in line: " + line);
-                    continue;
-                }
-
-                String[] opInfo = OP_TABLE.get(opcode);
-                String cls = opInfo[0];
-                String opc = opInfo[1];
-
-                switch (cls) {
-                    case "AD":
-                        if ("START".equals(opcode)) {
-                            LOC_COUNTER = (operand != null) ? Integer.parseInt(operand) : 0;
-                            INTERMEDIATE.add(String.format("%03d (AD,01) (C,%s)", LOC_COUNTER, operand));
-                        } else if ("END".equals(opcode)) {
-                            INTERMEDIATE.add("(AD,02)");
-                        }
-                        break;
-
-                    case "IS":
-                        String operandCode = "-";
-                        if (operand != null) {
-                            if (operand.matches("\\d+")) {
-                                operandCode = "(C," + operand + ")";
-                            } else {
-                                int symIdx = getOrCreateSymbolIndex(operand);
-                                operandCode = "(S," + symIdx + ")";
-                            }
-                        }
-                        INTERMEDIATE.add(String.format("%03d (IS,%s) %s", LOC_COUNTER, opc, operandCode));
-                        LOC_COUNTER++;
-                        break;
-
-                    case "DL":
-                        if ("DC".equals(opcode)) {
-                            INTERMEDIATE.add(String.format("%03d (DL,01) (C,%s)", LOC_COUNTER, operand));
-                            LOC_COUNTER++;
-                        } else if ("DS".equals(opcode)) {
-                            int size = Integer.parseInt(operand);
-                            INTERMEDIATE.add(String.format("%03d (DL,02) (C,%s)", LOC_COUNTER, operand));
-                            LOC_COUNTER += size;
-                        }
-                        break;
-                }
-            }
-
-            for (String ic : INTERMEDIATE) {
-                interWriter.write(ic);
-                interWriter.newLine();
-            }
-
-            symWriter.write("Index\tSymbol\tAddress\tDefined\n");
-            int idx = 1;
-            for (Symbol sym : SYMBOL_TABLE.values()) {
-                symWriter.write(String.format("%d\t%s\t%d\t%s\n",
-                    idx++, sym.name, sym.address, sym.isDefined ? "YES" : "NO"));
-            }
-        }
-    }
-
-    public static void pass2(String interFile, String symFile, String machineFile) throws IOException {
-        Map<Integer, Integer> symAddr = new HashMap<>();
-        try (BufferedReader symReader = new BufferedReader(new FileReader(symFile))) {
-            symReader.readLine();
-            String line;
-            int idx = 1;
-            while ((line = symReader.readLine()) != null) {
-                String[] parts = line.trim().split("\\s+");
-                if (parts.length >= 3) {
-                    int addr = Integer.parseInt(parts[2]);
-                    symAddr.put(idx++, addr);
-                }
-            }
-        }
-
-        try (BufferedReader interReader = new BufferedReader(new FileReader(interFile));
-             BufferedWriter machineWriter = new BufferedWriter(new FileWriter(machineFile))) {
-
-            String line;
-            while ((line = interReader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || (line.contains("(AD,") && !line.contains("START"))) {
-                    continue;
-                }
-
-                String[] parts = line.split("\\s+", 3);
-                if (parts.length < 2) continue;
-
-                String locStr = parts[0];
-                String opPart = parts[1];
-                String oprPart = (parts.length > 2) ? parts[2] : "-";
-
-                String content = opPart.substring(1, opPart.length() - 1);
-                String[] opInfo = content.split(",");
-                String opClass = opInfo[0];
-                int opcode = Integer.parseInt(opInfo[1]);
-
-                if ("DL".equals(opClass)) {
-                    if (opcode == 1) {
-                        int constantValue = Integer.parseInt(
-                            oprPart.substring(oprPart.indexOf(',') + 1, oprPart.length() - 1));
-
-                        machineWriter.write(String.format("%s %03d", locStr, constantValue));
-                        machineWriter.newLine();
-                    }
-                    continue;
-                }
-
-                int operandValue = 0;
-                if (oprPart.equals("-")) {
-                    operandValue = 0;
-                } else if (oprPart.startsWith("(C,")) {
-                    operandValue = Integer.parseInt(
-                        oprPart.substring(oprPart.indexOf(',') + 1, oprPart.length() - 1));
-                } else if (oprPart.startsWith("(S,")) {
-                    int symIdx = Integer.parseInt(
-                        oprPart.substring(oprPart.indexOf(',') + 1, oprPart.length() - 1));
-                    operandValue = symAddr.getOrDefault(symIdx, 0);
-                    if (operandValue == 0 && symIdx != 0) {
-                        System.err.println("Warning: Undefined symbol address retrieved for index " + symIdx);
-                    }
-                }
-
-                machineWriter.write(String.format("%s %02d %03d", locStr, opcode, operandValue));
-                machineWriter.newLine();
-            }
-        }
-    }    
+    // Symbol table
+    static Map<String, Integer> SYMTAB = new LinkedHashMap<>();
 
     public static void main(String[] args) {
-        String source = "source.asm";
-        String inter = "intermediate.ic";
-        String symtab = "symtab.txt";
-        String machine = "machinecode.mc";
 
-        if (args.length >= 4) {
-            source = args[0];
-            inter = args[1];
-            symtab = args[2];
-            machine = args[3];
+        // File paths — all in current working directory
+        String sourceFilePath = "source.asm";
+        String intermediateFilePath = "intermediate.txt";
+        String symbolTableFilePath = "symbol_table.txt";
+        String machineCodeFilePath = "machine_code.txt";
+
+        // Automatically generate the source file
+        generateSourceFile(sourceFilePath);
+
+        // Read source program from the file
+        List<String> program = readSourceProgram(sourceFilePath);
+
+        // ----- PASS I: Create intermediate code and symbol table -----
+        int LC = 0;
+        List<String> intermediate = new ArrayList<>();
+
+        for (String line : program) {
+            String parts[] = line.split("\\s+|,"); // Split by space or comma
+
+            if (parts[0].equals("START")) {
+                LC = Integer.parseInt(parts[1]);
+                System.out.println("Program starts at location: " + LC);
+                continue;
+            }
+
+            if (parts[0].equals("END")) break;
+
+            // Label handling (like ALPHA DS 1)
+            if (!OPTAB.containsKey(parts[0])) {
+                String label = parts[0];
+                SYMTAB.put(label, LC);
+
+                if (parts[1].equals("DS")) {
+                    LC += Integer.parseInt(parts[2]);
+                } else if (parts[1].equals("DC")) {
+                    LC += 1;
+                }
+                continue;
+            }
+
+            // Instruction → store in intermediate
+            intermediate.add(LC + " " + line);
+            LC++;
         }
 
-        try {
-            SYMBOL_TABLE.clear();
-            INTERMEDIATE.clear();
+        // Write the intermediate code and symbol table to files
+        writeToFile(intermediateFilePath, intermediate);
+        writeSymbolTableToFile(symbolTableFilePath);
 
-            pass1(source, inter, symtab);
-            pass2(inter, symtab, machine);
+        // ----- PASS II: Generate Machine Code -----
+        List<String> machineCode = generateMachineCode(intermediate);
 
-            System.out.println("Two-pass assembly completed successfully.");
-            System.out.println("Intermediate: " + inter);
-            System.out.println("Symbol Table: " + symtab);
-            System.out.println("Machine Code: " + machine);
+        // Write machine code to file
+        writeToFile(machineCodeFilePath, machineCode);
 
-        } catch (Exception e) {
-            System.err.println("Assembly Error: " + e.getMessage());
-            e.printStackTrace();
+        System.out.println("\n{OK} Files generated in current directory:");
+        System.out.println(" - " + sourceFilePath);
+        System.out.println(" - " + intermediateFilePath);
+        System.out.println(" - " + symbolTableFilePath);
+        System.out.println(" - " + machineCodeFilePath);
+    }
+
+    // Method to generate the source.asm file automatically
+    public static void generateSourceFile(String filePath) {
+        List<String> program = Arrays.asList(
+            "START 100",
+            "MOVER A, ALPHA",
+            "ADD A, ONE",
+            "MOVEM A, BETA",
+            "SUB A, TWO",
+            "STOP",
+            "ALPHA DS 1",
+            "BETA DS 1",
+            "ONE DC 1",
+            "TWO DC 2",
+            "END"
+        );
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (String line : program) {
+                writer.write(line);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error generating source file: " + e.getMessage());
         }
+    }
+
+    // Method to read the source program from a file
+    public static List<String> readSourceProgram(String filePath) {
+        List<String> program = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                program.add(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading source file: " + e.getMessage());
+        }
+        return program;
+    }
+
+    // Method to write a list of strings to a file
+    public static void writeToFile(String filePath, List<String> data) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (String line : data) {
+                writer.write(line);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
+    // Method to write symbol table to a file
+    public static void writeSymbolTableToFile(String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("Symbol\tAddress");
+            writer.newLine();
+            for (Map.Entry<String, Integer> entry : SYMTAB.entrySet()) {
+                writer.write(entry.getKey() + "\t" + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing symbol table to file: " + e.getMessage());
+        }
+    }
+
+    // Method to generate machine code for Pass-II
+    public static List<String> generateMachineCode(List<String> intermediate) {
+        List<String> machineCode = new ArrayList<>();
+        for (String line : intermediate) {
+            String parts[] = line.split("\\s+|,");
+            int addr = Integer.parseInt(parts[0]);
+            String opcode = OPTAB.get(parts[1]);
+            String reg = "0", mem = "000";
+
+            if (parts.length >= 3) {
+                if (parts[2].equals("A")) {
+                    reg = "1";
+                }
+
+                if (parts.length == 4) {
+                    String symbol = parts[3];
+                    mem = String.format("%03d", SYMTAB.get(symbol));
+                }
+            }
+
+            machineCode.add(String.format("%03d: %s %s %s", addr, opcode, reg, mem));
+        }
+        return machineCode;
     }
 }
 
@@ -272,162 +185,189 @@ public class TwoPassAssembler {
 Problem Statement 2: Two-Pass Macro Processor
 Design suitable data structures and implement Pass-I and Pass-II of a two-pass macroprocessor.
 The output of Pass-I (MNT, MDT and intermediate code file without any macro definitions) should be input for Pass-II.
-
-
-SOURCE.ASM COPY THIS AND SAVE FILE TO Source.txt
-
-MACRO
-INCR &A
-LOAD &A
-ADD ONE
-STORE &A
-MEND
-START
-INCR COUNT
-END
-
 */
 
-// Practical No. 2
+//SimpleMacroProcessor.java
+
 
 import java.io.*;
 import java.util.*;
 
-public class TwoPassMacroProcessor {
+public class SimpleMacroProcessor {
 
-    static class MNTEntry {
-        String name;
-        int mdtIndex;
-        int paramCount;
+    // Macro Name Table (MNT): macro name -> index in MDT
+    static Map<String, Integer> MNT = new LinkedHashMap<>();
 
-        MNTEntry(String name, int mdtIndex, int paramCount) {
-            this.name = name;
-            this.mdtIndex = mdtIndex;
-            this.paramCount = paramCount;
-        }
-    }
-
+    // Macro Definition Table (MDT): index -> macro line
     static List<String> MDT = new ArrayList<>();
-    static Map<String, MNTEntry> MNT = new HashMap<>();
 
-    static final String MACRO = "MACRO";
-    static final String MEND = "MEND";
+    public static void main(String[] args) {
 
-    public static void main(String[] args) throws IOException {
-        String inputFile = "input.asm";
-        String intermediateFile = "intermediate.asm";
-        String outputFile = "output.asm";
+        // File paths — all in current directory
+        String sourceFile = "macro_source.asm";
+        String mntFile = "mnt.txt";
+        String mdtFile = "mdt.txt";
+        String intermediateFile = "intermediate_macro.txt";
+        String expandedFile = "expanded_code.txt";
 
-        passOne(inputFile, intermediateFile);
-        passTwo(intermediateFile, outputFile);
-    }
+        // Generate the source file automatically
+        generateSourceFile(sourceFile);
 
-    static void passOne(String inputFile, String intermediateFile) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(inputFile));
-        BufferedWriter bw = new BufferedWriter(new FileWriter(intermediateFile));
+        // Read program lines
+        List<String> program = readSourceFile(sourceFile);
 
-        String line;
-        boolean inMacroDef = false;
-        String macroName = null;
+        // ----- PASS I: Build MNT, MDT, and Intermediate Code -----
+        boolean inMacro = false;
+        String macroName = "";
+        List<String> intermediate = new ArrayList<>();
+        int mdtIndex = 0;
 
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty()) continue;
+        for (String line : program) {
+            String parts[] = line.split("\\s+|,"); // Split by space or comma
 
-            String[] tokens = line.split("\\s+");
+            // Ignore "MACRO" keyword line
+            if (parts[0].equals("MACRO"))
+                continue;
 
-            if (tokens[0].equalsIgnoreCase(MACRO)) {
-                line = br.readLine();
-                if (line == null) break;
-                line = line.trim();
+            // End of macro definition
+            if (parts[0].equals("MEND")) {
+                MDT.add("MEND");
+                inMacro = false;
+                mdtIndex++;
+                continue;
+            }
 
-                String[] headerTokens = line.split("\\s+", 2);
-                macroName = headerTokens[0];
-                String[] params = new String[0];
-
-                if (headerTokens.length > 1) {
-                    params = headerTokens[1].split(",");
-                }
-
-                inMacroDef = true;
-                MNT.put(macroName, new MNTEntry(macroName, MDT.size(), params.length));
+            // Inside macro body — store in MDT
+            if (inMacro) {
                 MDT.add(line);
-                continue;
+                mdtIndex++;
             }
-
-            if (inMacroDef) {
-                if (tokens[0].equalsIgnoreCase(MEND)) {
-                    MDT.add(MEND);
-                    inMacroDef = false;
-                    continue;
-                } else {
-                    MNTEntry entry = MNT.get(macroName);
-                    String defLine = line;
-                    String headerLine = MDT.get(entry.mdtIndex);
-                    String[] headerParts = headerLine.split("\\s+", 2);
-
-                    if (headerParts.length > 1) {
-                        String[] paramNames = headerParts[1].split(",");
-                        for (int p = 0; p < paramNames.length; p++) {
-                            String pname = paramNames[p].trim();
-                            if (!pname.isEmpty()) {
-                                defLine = defLine.replaceAll("\\b" + pname + "\\b", "#" + (p + 1));
-                            }
-                        }
-                    }
-                    MDT.add(defLine);
-                }
-            } else {
-                bw.write(line);
-                bw.newLine();
+            // Start of a macro definition
+            else if (parts.length > 1 && parts[1].equals("MACRO")) {
+                macroName = parts[0];
+                MNT.put(macroName, mdtIndex);
+                inMacro = true;
+            }
+            // Lines outside macro → normal program code
+            else {
+                intermediate.add(line);
             }
         }
 
-        br.close();
-        bw.close();
+        // Write Pass-I output files
+        writeMNTToFile(mntFile);
+        writeMDTToFile(mdtFile);
+        writeToFile(intermediateFile, intermediate);
+
+        // ----- PASS II: Expand macros -----
+        List<String> expanded = new ArrayList<>();
+
+        for (String line : intermediate) {
+            String parts[] = line.split("\\s+|,");
+            if (MNT.containsKey(parts[0])) {
+                int idx = MNT.get(parts[0]);
+                String arg = parts[1]; // argument passed to macro
+
+                while (!MDT.get(idx).equals("MEND")) {
+                    String expandedLine = MDT.get(idx).replaceAll("X", arg);
+                    expanded.add(expandedLine);
+                    idx++;
+                }
+            } else {
+                expanded.add(line);
+            }
+        }
+
+        writeToFile(expandedFile, expanded);
+
+        // Display summary
+        System.out.println("\n{OK} Files generated in current directory:");
+        System.out.println(" - " + sourceFile);
+        System.out.println(" - " + mntFile);
+        System.out.println(" - " + mdtFile);
+        System.out.println(" - " + intermediateFile);
+        System.out.println(" - " + expandedFile);
     }
 
-    static void passTwo(String intermediateFile, String outputFile) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(intermediateFile));
-        BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
+    // Automatically create the source file
+    public static void generateSourceFile(String filePath) {
+        List<String> program = Arrays.asList(
+            "START 100",
+            "INCR MACRO X",
+            "ADD X, ONE",
+            "MOVER A, X",
+            "MEND",
+            "INCR ALPHA",
+            "STOP",
+            "ALPHA DC 1",
+            "ONE DC 1",
+            "END"
+        );
 
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                bw.newLine();
-                continue;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (String line : program) {
+                writer.write(line);
+                writer.newLine();
             }
-
-            String[] tokens = line.split("\\s+");
-            String firstToken = tokens[0];
-
-            if (MNT.containsKey(firstToken)) {
-                MNTEntry entry = MNT.get(firstToken);
-                String argsPart = line.substring(firstToken.length()).trim();
-                String[] args = argsPart.isEmpty() ? new String[0] : argsPart.split("\\s*,\\s*");
-
-                int mdtIndex = entry.mdtIndex + 1;
-                while (mdtIndex < MDT.size() && !MDT.get(mdtIndex).equalsIgnoreCase(MEND)) {
-                    String mdtLine = MDT.get(mdtIndex);
-                    for (int i = 0; i < args.length; i++) {
-                        mdtLine = mdtLine.replaceAll("\\#" + (i + 1), args[i].trim());
-                    }
-                    bw.write(mdtLine);
-                    bw.newLine();
-                    mdtIndex++;
-                }
-            } else {
-                bw.write(line);
-                bw.newLine();
-            }
+        } catch (IOException e) {
+            System.out.println("Error generating source file: " + e.getMessage());
         }
+    }
 
-        br.close();
-        bw.close();
+    // Read program lines from file
+    public static List<String> readSourceFile(String filePath) {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading source file: " + e.getMessage());
+        }
+        return lines;
+    }
+
+    // Write MNT to file
+    public static void writeMNTToFile(String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("Macro\tMDT Index");
+            writer.newLine();
+            for (Map.Entry<String, Integer> e : MNT.entrySet()) {
+                writer.write(e.getKey() + "\t" + e.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing MNT: " + e.getMessage());
+        }
+    }
+
+    // Write MDT to file
+    public static void writeMDTToFile(String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (int i = 0; i < MDT.size(); i++) {
+                writer.write(i + "\t" + MDT.get(i));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing MDT: " + e.getMessage());
+        }
+    }
+
+    // Generic file write method
+    public static void writeToFile(String filePath, List<String> data) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (String line : data) {
+                writer.write(line);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
     }
 }
+
+
 
 
 
@@ -439,6 +379,8 @@ The program should accept process details such as Process ID, Arrival Time, and 
 Description:
 This program simulates the FCFS CPU scheduling algorithm. It takes input for the number of processes and their respective burst times. Although the problem statement mentions arrival time, this implementation assumes all processes arrive at time zero (or in order) since arrival time handling is not fully included here. The program calculates waiting time and turnaround time for each process and prints a Gantt chart along with average waiting time and turnaround time.
 */
+
+//FCFS.C
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -577,6 +519,8 @@ Description:
 This program simulates the SJF Preemptive scheduling algorithm where the CPU is assigned to the process with the shortest remaining burst time at every time unit. Processes with earlier arrival times and smaller burst times are prioritized. The program tracks remaining time for each process, calculates waiting and turnaround times after completion, and prints the results including average waiting and turnaround times.
 */
 
+//SJF.C
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
@@ -693,6 +637,8 @@ Each process should have an associated priority value, and the scheduler should 
 Compute and display the waiting time, turnaround time, and average times for all processes.
 */
 
+//priority.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_PROCESSES 10
@@ -797,6 +743,9 @@ Write a program to simulate the Round Robin (Preemptive) CPU scheduling algorith
 The program should take time quantum as input and schedule processes in a cyclic order.
 Display the Gantt chart, waiting time, turnaround time, and average values for all processes.
 */
+
+//rr.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -823,10 +772,8 @@ struct GanttSegment {
 
 void initialize_processes(struct Process *procs, int *num_processes_ptr, int *quantum_ptr);
 int compare_arrival_time(const void *a, const void *b);
-static void enqueue_new_arrivals(int current_time, struct Process *procs, int num_processes,
-                                 int *queue, int *rear, int *is_in_system, int *processes_arrived);
-void calculate_rr(struct Process *procs, int num_processes, int time_quantum,
-                  struct GanttSegment *gantt, int *gantt_idx_ptr);
+static void enqueue_new_arrivals(int current_time, struct Process *procs, int num_processes,int *queue, int *rear, int *is_in_system, int *processes_arrived);
+void calculate_rr(struct Process *procs, int num_processes, int time_quantum, struct GanttSegment *gantt, int *gantt_idx_ptr);
 void display_gantt_chart(struct GanttSegment *gantt, int gantt_idx);
 void display_results(struct Process *procs, int num_processes);
 
@@ -864,6 +811,11 @@ void initialize_processes(struct Process *procs, int *num_processes_ptr, int *qu
         printf("Enter burst time for Process P%d: ", p->id);
         scanf("%d", &p->burst_time);
 
+        if (p->arrival_time < 0 || p->burst_time <= 0) {
+            printf("Invalid input for Process P%d. Arrival time and burst time must be non-negative.\n", p->id);
+            exit(1);
+        }
+
         p->remaining_time = p->burst_time;
         p->waiting_time = 0;
         p->turnaround_time = 0;
@@ -872,6 +824,11 @@ void initialize_processes(struct Process *procs, int *num_processes_ptr, int *qu
 
     printf("Enter Time Quantum: ");
     scanf("%d", quantum_ptr);
+
+    if (*quantum_ptr <= 0) {
+        printf("Invalid time quantum. Exiting.\n");
+        exit(1);
+    }
 }
 
 int compare_arrival_time(const void *a, const void *b) {
@@ -1020,6 +977,7 @@ void display_results(struct Process *procs, int num_processes) {
 }
 
 
+
 /*
 Problem Statement 7: Memory Allocation – First Fit
 Write a program to simulate First Fit memory allocation strategy.
@@ -1027,83 +985,54 @@ The program should allocate each process to the first available memory block tha
 Display the memory allocation table and identify any unused or fragmented memory.
 */
 
-#include <stdio.h>
-#define MAX_BLOCKS 10
-#define MAX_PROCESSES 10
+//ffit.c
+#include<stdio.h>
 
 int main() {
-    int block_sizes[MAX_BLOCKS], process_sizes[MAX_PROCESSES];
-    int block_count, process_count;
-    int allocation[MAX_PROCESSES];
-
-    printf("Enter number of memory blocks (max %d): ", MAX_BLOCKS);
-    scanf("%d", &block_count);
-    if (block_count <= 0 || block_count > MAX_BLOCKS) {
-        printf("Invalid number of blocks. Exiting.\n");
-        return 1;
+    
+    int b, p;
+    printf("Enter number of blocks: ");
+    scanf("%d", &b);
+    
+    int block[b], orig[b];
+    printf("Enter size of each block: ");
+    for(int i=0; i<b; i++) {
+        scanf("%d", &block[i]);
+        orig[i] = block[i];
     }
-
-    printf("Enter sizes of memory blocks:\n");
-    for (int i = 0; i < block_count; i++) {
-        printf("Block %d size: ", i+1);
-        scanf("%d", &block_sizes[i]);
+    
+    printf("Enter number of processes: ");
+    scanf("%d", &p);
+    
+    int process[p], alloc[p], frag[p];
+    for(int i=0; i<p; i++) {
+        printf("Enter size of processes %d: ", i+1);
+        scanf("%d", &process[i]);
+        alloc[i] = -1;
+        frag[i] = 0;
     }
-
-    printf("Enter number of processes (max %d): ", MAX_PROCESSES);
-    scanf("%d", &process_count);
-    if (process_count <= 0 || process_count > MAX_PROCESSES) {
-        printf("Invalid number of processes. Exiting.\n");
-        return 1;
-    }
-
-    printf("Enter sizes of processes:\n");
-    for (int i = 0; i < process_count; i++) {
-        printf("Process %d size: ", i+1);
-        scanf("%d", &process_sizes[i]);
-        allocation[i] = -1;
-    }
-
-    for (int i = 0; i < process_count; i++) {
-        for (int j = 0; j < block_count; j++) {
-            if (block_sizes[j] >= process_sizes[i]) {
-                allocation[i] = j;
-                block_sizes[j] -= process_sizes[i];
+    
+    for(int i=0; i<p; i++) {
+        for(int j=0; j<b; j++) {
+            if (block[j] >= process[i]) {
+                alloc[i] = j;
+                block[j] -= process[i];
+                frag[i] = block[j];
                 break;
             }
         }
     }
-
-    printf("\nProcess No.\tProcess Size\tBlock No.\tBlock Remaining\n");
-    printf("------------------------------------------------------\n");
-    for (int i = 0; i < process_count; i++) {
-        if (allocation[i] != -1) {
-            printf("%d\t\t%d\t\t%d\t\t%d\n",
-                   i + 1,
-                   process_sizes[i],
-                   allocation[i] + 1,
-                   block_sizes[allocation[i]]);
-        } else {
-            printf("%d\t\t%d\t\t%s\t\t%s\n",
-                   i + 1,
-                   process_sizes[i],
-                   "Not Allocated",
-                   "N/A");
-        }
+    
+    printf("\nProcess\tSize\tBlock\tInternal Fragmentation\n");
+    for(int i=0; i<p; i++) {
+        if (alloc[i] != -1)
+            printf("%d   \t%d   \t%d   \t%d   \n", i+1, process[i], alloc[i]+1, frag[i]);
+        else
+            printf("%d   \t%d   \tN-A   \t--\n", i+1, process[i]);    
     }
-
-    printf("\nUnused / Fragmented Memory in Blocks:\n");
-    int total_fragmented = 0;
-    for (int i = 0; i < block_count; i++) {
-        if (block_sizes[i] > 0) {
-            printf("Block %d: %d units\n", i + 1, block_sizes[i]);
-            total_fragmented += block_sizes[i];
-        }
-    }
-    if (total_fragmented == 0) {
-        printf("No unused or fragmented memory remaining.\n");
-    }
-
+    
     return 0;
+    
 }
 
 /*
@@ -1211,6 +1140,8 @@ The program should continue searching for the next suitable memory block from th
 Display the memory allocation table and fragmentation details.
 */
 
+//nfit.c
+
 #include <stdio.h>
 #define MAX_BLOCKS 10
 #define MAX_PROCESSES 10
@@ -1311,6 +1242,8 @@ The program should allocate each process to the largest available memory block.
 Display the memory allocation results and any unused space.
 */
 
+//wfit.c
+
 #include <stdio.h>
 #define MAX_BLOCKS 10
 #define MAX_PROCESSES 10
@@ -1403,6 +1336,8 @@ The program should accept a page reference string and number of frames as input,
 simulate the process of page replacement, and display the total number of page faults.
 */
 
+//fifo.c
+
 #include <stdio.h>
 #define MAX_FRAMES 10
 #define MAX_PAGES 100
@@ -1482,6 +1417,9 @@ Problem Statement 12: Page Replacement – LRU
 Write a program to simulate the Least Recently Used (LRU) page replacement algorithm.
 The program should display the frame contents after each page reference and the total number of page faults.
 */
+
+//lru.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_FRAMES 10
@@ -1596,6 +1534,8 @@ Write a program to simulate the Optimal Page Replacement algorithm.
 The program should replace the page that will not be used for the longest period of time in the future and display the page replacement steps and page fault count.
 */
 
+//optimal.c
+
 #include <stdio.h>
 #define MAX_FRAMES 10
 #define MAX_PAGES 100
@@ -1696,100 +1636,5 @@ int main() {
 
     printf("\nTotal number of page faults: %d\n", page_faults);
 
-    return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Extra codes
-/*
-MRU Page Replacement Algorithm
-*/
-#include <stdio.h>
-#define MAX_FRAMES 10
-#define MAX_PAGES 30
-
-int frames[MAX_FRAMES];
-int pages[MAX_PAGES];
-int recent[MAX_FRAMES];
-int num_frames, num_pages;
-
-void initialize() {
-    printf("=== MRU Page Replacement ===\n\n");
-    printf("Enter number of frames: ");
-    scanf("%d", &num_frames);
-    printf("Enter number of pages: ");
-    scanf("%d", &num_pages);
-    printf("Enter page reference string: ");
-    for(int i = 0; i < num_pages; i++) {
-        scanf("%d", &pages[i]);
-    }
-    for(int i = 0; i < num_frames; i++) {
-        frames[i] = -1;
-        recent[i] = -1;
-    }
-}
-
-void mru() {
-    int page_faults = 0;
-    int time = 0;
-    printf("\nPage Replacement Process:\n");
-    
-    for(int i = 0; i < num_pages; i++) {
-        int found = 0;
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == pages[i]) {
-                found = 1;
-                recent[j] = time++;
-                break;
-            }
-        }
-        
-        if(!found) {
-            int mru_index = 0;
-            for(int j = 1; j < num_frames; j++) {
-                if(recent[j] > recent[mru_index]) {
-                    mru_index = j;
-                }
-            }
-            frames[mru_index] = pages[i];
-            recent[mru_index] = time++;
-            page_faults++;
-        }
-        
-        printf("Page %d -> [", pages[i]);
-        for(int j = 0; j < num_frames; j++) {
-            if(frames[j] == -1) printf(" - ");
-            else printf(" %d ", frames[j]);
-        }
-        printf("] %s\n", found ? "Hit" : "Miss");
-    }
-    
-    printf("\nTotal Page Faults: %d\n", page_faults);
-    printf("Hit Ratio: %.2f%%\n", ((num_pages - page_faults) * 100.0) / num_pages);
-    printf("Miss Ratio: %.2f%%\n", (page_faults * 100.0) / num_pages);
-}
-
-int main() {
-    initialize();
-    mru();
     return 0;
 }
