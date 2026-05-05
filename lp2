@@ -1,6 +1,27 @@
-# Python Codes are upto 10 problem statements!! 11 to 13 are Cloud Computing!! so cannot provide that! learn steps for given problem statement for cloud computing!
+================================================================================
+                        LP II - PROBLEM STATEMENTS & SOLUTIONS
+================================================================================
 
-# Problem 1: Implement depth first search algorithm, Use an undirected graph and develop a recursive algorithm for searching all the vertices of a graph or tree data structure.
+PROBLEM STATEMENTS
+==================
+1.  Implement Depth First Search (DFS) algorithm using undirected graph (recursive)
+2.  Implement Breadth First Search (BFS) algorithm using undirected graph (recursive)
+3.  Implement A* Algorithm for any game search problem
+4.  Implement Greedy Search algorithm for Selection Sort
+5.  Implement Greedy Search algorithm for Minimum Spanning Tree
+6.  Implement Greedy Search algorithm for Prim's Minimal Spanning Tree
+7.  Implement Greedy Search algorithm for Kruskal's Minimal Spanning Tree
+8.  Implement Greedy Search algorithm for Dijkstra's Minimal Spanning Tree
+9.  Implement Branch and Bound / Backtracking for N-Queens or Graph Coloring
+10. Develop an Elementary Chatbot for customer interaction
+11. Create and launch a Virtual Machine using Amazon EC2
+12. Deploy a Web Application on Google App Engine OR Install KVM Virtualization
+13. Create a Salesforce Application using Apex and implement Selection Sort
+
+================================================================================
+PROBLEM 1: DEPTH FIRST SEARCH (DFS)
+================================================================================
+
 def dfs(graph, vertex, visited=None):
     if visited is None:
         visited = set()
@@ -25,7 +46,9 @@ print("DFS Traversal starting from vertex 0:")
 dfs(graph, 0)
 print()
 
-# Problem 2: Implement Breadth First Search algorithm, Use an undirected graph and develop a recursive algorithm for searching all the vertices of a graph or tree data structure. 
+================================================================================
+PROBLEM 2: BREADTH FIRST SEARCH (BFS)
+================================================================================
 
 from collections import deque
 
@@ -56,7 +79,9 @@ graph = {
 print("BFS Traversal starting from vertex 0:")
 print(" -> ".join(map(str, bfs(graph, 0))))
 
-# Problem 3: Implement A star Algorithm for any game search problem.
+================================================================================
+PROBLEM 3: A* ALGORITHM (8-PUZZLE GAME)
+================================================================================
 
 import heapq
 
@@ -105,29 +130,35 @@ def a_star(start, goal):
             return path[::-1]
         closed.add(tuple(cur.board))
         for nb in cur.neighbors():
-            if tuple(nb.board) in closed: 
+            if tuple(nb.board) in closed:
                 continue
             heapq.heappush(open_heap, nb)
     return None
 
 def print_board(b):
-    for i in range(0,9,3): print(b[i:i+3])
+    for i in range(0, 9, 3):
+        print(b[i:i+3])
     print()
 
 start = [1,2,5,3,4,0,6,7,8]
 goal  = [1,2,5,3,4,8,6,7,0]
+
 print("Start:")
 print_board(start)
 print("Goal:")
 print_board(goal)
+
 path = a_star(start, goal)
 if path:
     print(f"Solution in {len(path)-1} moves:")
-    for p in path: print_board(p)
+    for p in path:
+        print_board(p)
 else:
     print("No solution found.")
 
-# Problem 4: Implement Greedy search algorithm for Selection Sort
+================================================================================
+PROBLEM 4: GREEDY SEARCH - SELECTION SORT
+================================================================================
 
 def selection_sort(arr):
     n = len(arr)
@@ -145,7 +176,9 @@ print(f"Original Array: {arr}")
 sorted_arr = selection_sort(arr)
 print(f"Sorted Array:   {sorted_arr}")
 
-# Problem 5: Implement Greedy search algorithm for Minimum Spanning Tree (Generic)
+================================================================================
+PROBLEM 5: GREEDY SEARCH - MINIMUM SPANNING TREE (GENERIC)
+================================================================================
 
 def find(parent, i):
     if parent[i] != i:
@@ -184,16 +217,16 @@ edges = [
     (1, 3, 15),
     (2, 3, 4)
 ]
+
 mst, cost = greedy_mst(vertices, edges)
 print("Edges in MST:")
 for u, v, w in mst:
     print(f"  {u} -- {v}  weight: {w}")
 print(f"Total Cost: {cost}")
 
-
-# Problem 6: Implement Greedy search algorithm for Prim's Minimal Spanning Tree Algorithm 
-
-
+================================================================================
+PROBLEM 6: GREEDY SEARCH - PRIM'S MST
+================================================================================
 
 import heapq
 
@@ -225,13 +258,16 @@ graph = {
     3: [(0, 6), (1, 8), (4, 9)],
     4: [(1, 5), (2, 7), (3, 9)]
 }
+
 mst, cost = prims_mst(graph)
 print("Prim's MST Edges:")
 for u, v, w in mst:
     print(f"  {u} -- {v}  weight: {w}")
 print(f"Total Cost: {cost}")
 
-# Problem 7: Implement Greedy search algorithm for Kruskal's Minimal Spanning Tree Algorithm 
+================================================================================
+PROBLEM 7: GREEDY SEARCH - KRUSKAL'S MST
+================================================================================
 
 class UnionFind:
     def __init__(self, n):
@@ -277,13 +313,16 @@ edges = [
     (1, 3, 15),
     (2, 3, 4)
 ]
+
 mst, cost = kruskals_mst(num_vertices, edges)
 print("Kruskal's MST Edges:")
 for u, v, w in mst:
     print(f"  {u} -- {v}  weight: {w}")
 print(f"Total Cost: {cost}")
 
-# Problem 8: Implement Greedy search algorithm for Dijkstra's Minimal Spanning Tree Algorithm 
+================================================================================
+PROBLEM 8: GREEDY SEARCH - DIJKSTRA'S ALGORITHM
+================================================================================
 
 import heapq
 
@@ -320,14 +359,18 @@ graph = {
     'C': [('A', 4), ('B', 2), ('D', 1)],
     'D': [('B', 5), ('C', 1)]
 }
+
 start = 'A'
 dist, prev = dijkstra(graph, start)
+
 print(f"Shortest distances from {start}:")
 for node, d in dist.items():
     path = get_path(prev, node)
     print(f"  To {node}: {d}  Path: {' -> '.join(path)}")
 
-# Problem 9: Implement a solution for a Constraint Satisfaction Problem using Branch and Bound and Backtracking for n-queens problem or a graph coloring problem.
+================================================================================
+PROBLEM 9: N-QUEENS (BACKTRACKING & BRANCH AND BOUND)
+================================================================================
 
 class NQueens:
     def __init__(self, n):
@@ -346,11 +389,15 @@ class NQueens:
         for col in range(self.n):
             if col in self.cols or (row - col) in self.diag1 or (row + col) in self.diag2:
                 continue
-            self.cols.add(col); self.diag1.add(row - col); self.diag2.add(row + col)
-            board.append(col)N-Queens using Backtracking & Branch and Bound
+            self.cols.add(col)
+            self.diag1.add(row - col)
+            self.diag2.add(row + col)
+            board.append(col)
             self.solve(row + 1, board)
             board.pop()
-            self.cols.remove(col); self.diag1.remove(row - col); self.diag2.remove(row + col)
+            self.cols.remove(col)
+            self.diag1.remove(row - col)
+            self.diag2.remove(row + col)
 
     def print_board(self, solution):
         for r in range(self.n):
@@ -365,8 +412,9 @@ if solver.solutions:
     print("First Solution:")
     solver.print_board(solver.solutions[0])
 
-
-# Problem 10: Develop an elementary chatbot for any suitable customer interaction application
+================================================================================
+PROBLEM 10: ELEMENTARY CUSTOMER SUPPORT CHATBOT
+================================================================================
 
 import re
 import random
@@ -393,8 +441,7 @@ class CustomerChatbot:
             ],
             r"payment|pay|charge|bill": [
                 "We accept credit cards, debit cards, PayPal, and bank transfers.",
-                "If you see an unexpected charge, please share your order ID and we'll invest
-                igate.",
+                "If you see an unexpected charge, please share your order ID and we'll investigate.",
             ],
             r"shipping|delivery|deliver": [
                 "Standard shipping takes 5-7 business days. Express shipping takes 2-3 days.",
@@ -405,7 +452,8 @@ class CustomerChatbot:
                 "For account issues, please provide your registered email address.",
             ],
             r"hours|timing|open|available": [
-                lambda: f"Our customer support is available Monday-Friday, 9AM-6PM. Current time: {datetime.now().strftime('%H:%M')}"
+                lambda: f"Our support is available Mon-Fri, 9AM-6PM. "
+                        f"Current time: {datetime.now().strftime('%H:%M')}"
             ],
             r"thank|thanks|thank you": [
                 "You're welcome! Is there anything else I can help you with?",
@@ -415,13 +463,16 @@ class CustomerChatbot:
                 "Goodbye! Thank you for contacting us. Have a wonderful day!",
             ],
             r"help|support|assist": [
-                "I can help you with orders, refunds, shipping, account issues, and payments. What do you need?",
+                "I can help you with orders, refunds, shipping, "
+                "account issues, and payments. What do you need?",
             ],
             r"product|item|stock|available": [
-                "Please visit our product catalog at our website. Need help finding something specific?",
+                "Please visit our product catalog at our website. "
+                "Need help finding something specific?",
             ],
             r"discount|coupon|promo|offer": [
-                "Check our Offers page for current discounts. Sign up for our newsletter for exclusive deals!",
+                "Check our Offers page for current discounts. "
+                "Sign up for our newsletter for exclusive deals!",
             ],
         }
         self.default_responses = [
@@ -444,7 +495,6 @@ class CustomerChatbot:
         print(f"{'='*50}")
         print("Type 'bye' to exit.\n")
         print(f"{self.name}: Hello! How can I assist you today?")
-
         while True:
             user_input = input("You: ").strip()
             if not user_input:
@@ -453,103 +503,183 @@ class CustomerChatbot:
             print(f"{self.name}: {response}")
             if re.search(r"bye|goodbye|exit|quit", user_input.lower()):
                 break
+
 bot = CustomerChatbot()
 bot.chat()
 
-## 11 — Create and launch an Amazon EC2 VM instance (concise step-by-step)
+================================================================================
+PROBLEM 11: AMAZON EC2 - LAUNCH A VIRTUAL MACHINE INSTANCE
+================================================================================
 
-# 1. Sign in to AWS Management Console and open EC2 (choose region).
-# 2. Click “Instances” → “Launch instances”.
-# 3. Name instance; choose AMI (e.g., Amazon Linux 2 or Ubuntu).
-# 4. Choose Instance Type (e.g., t2.micro for free tier).
-# 5. Configure Instance Details:
-#    - Network: default VPC/subnet or your choice.
-#    - Auto-assign Public IP: Enable if you need SSH from internet.
-#    - IAM role: attach if instance needs AWS API access.
-#    - Leave other defaults or set user data for bootstrap scripts.
-# 6. Add Storage: adjust root volume size/type as needed.
-# 7. Add Tags: add Name key/value.
-# 8. Configure Security Group:
-#    - Create new or select existing.
-#    - Allow SSH (TCP 22) from your IP only.
-#    - Allow HTTP (TCP 80) / HTTPS (443) if hosting web app.
-# 9. Review and Launch.
-# 10. Select or create a key pair (.pem). Download and keep secure.
-# 11. Launch and wait until instance state = running and status checks pass.
-# 12. Connect:
-#     - Set permissions: chmod 400 key.pem
-#     - SSH: ssh -i key.pem ec2-user@PUBLIC_IP (user varies by AMI: ec2-user/ubuntu/centos)
-# 13. Post-launch setup:
-#     - Update packages (e.g., sudo yum update -y or sudo apt update && sudo apt upgrade -y).
-#     - Install web server/runtime (Apache/nginx, Node/Python etc.).
-#     - Configure firewall (iptables/ufw) if needed.
-# 14. (Optional) Allocate and attach an Elastic IP for stable public IP.
-# 15. (Optional) Create AMI from configured instance for reuse or autoscaling.
+Steps:
 
-## 12A — Create & deploy a simple web app on Google App Engine (standard environment)
+1.  Sign in to AWS Management Console -> Open EC2 -> Select Region
 
-# Prerequisites: Google Cloud account, gcloud CLI installed and authenticated, billing enabled, project created.
+2.  Click "Instances" -> "Launch Instances"
 
-# 1. Create GCP Project and enable App Engine:
-#    - gcloud projects create PROJECT_ID
-#    - gcloud config set project PROJECT_ID
-#    - gcloud app create --region=REGION
-# 2. Prepare application (example: simple Python Flask):
-#    - app/main.py: create Flask app with route returning “Hello World”.
-#    - app/app.yaml: runtime: python39, entrypoint: gunicorn -b :$PORT main:app
-#    - requirements.txt: flask, gunicorn
-# 3. Local test:
-#    - python3 -m venv venv; source venv/bin/activate
-#    - pip install -r requirements.txt
-#    - python main.py (or gunicorn) and verify locally.
-# 4. Deploy:
-#    - gcloud app deploy app.yaml --project=PROJECT_ID
-#    - Confirm deployment when prompted.
-# 5. Access app:
-#    - gcloud app browse or visit https://PROJECT_ID.REGION.r.appspot.com (gcloud prints URL).
-# 6. Logs and monitoring:
-#    - gcloud app logs read
-#    - Use Cloud Console → App Engine → Versions/Services to view versions and traffic splitting.
-# 7. Update: change code, then gcloud app deploy to push a new version.
+3.  Name the instance
+    Choose an AMI (e.g., Amazon Linux 2 or Ubuntu)
 
-# (Alternative: use other runtimes — Node, Java, Go — same flow: runtime, app.yaml, gcloud app deploy.)
+4.  Choose Instance Type (e.g., t2.micro for free tier)
 
-## 12B — OR: Install and configure KVM virtualization (Linux)
+5.  Configure Instance Details:
+      - Network       : default VPC/subnet
+      - Public IP     : Enable for SSH access from internet
+      - IAM Role      : Attach if AWS API access is needed
 
-# Target: Ubuntu/Debian example.
+6.  Add Storage:
+      - Adjust root volume size and type as needed
 
-# 1. Verify CPU virtualization support:
-#    - egrep -c '(vmx|svm)' /proc/cpuinfo  (nonzero means supported)
-# 2. Install packages:
-   - sudo apt update
-   - sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
-# 3. Add user to libvirt and kvm groups:
-   - sudo usermod -aG libvirt,kvm $USER
-#    - Log out/in.
-# 4. Start and enable libvirt:
-   - sudo systemctl enable --now libvirtd
-# 5. Verify:
-   - virsh list --all
-   - virsh capabilities
-# 6. Create network/bridge (optional) or use default NAT network.
-# 7. Use virt-manager (GUI) or virt-install to create VMs:
-#    - Example virt-install:
-     sudo virt-install --name testvm --vcpus 2 --memory 2048 --disk size=20 --cdrom /path/to/installer.iso --os-variant ubuntu22.04 --network network=default --graphics none --console pty,target_type=serial
-# 8. Manage VMs with virsh, virt-manager, or virsh commands (start/stop/destroy/snapshot).
-# 9. Configure storage pools and networks as needed.
-# 10. (Optional) Enable remote access, set up bridged networking for VMs to access LAN.
+7.  Add Tags:
+      - Add Name key/value pair
 
-## 13 — Create a Salesforce application using Apex and implement Selection Sort
+8.  Configure Security Group:
+      - Allow SSH   (TCP 22)  from your IP only
+      - Allow HTTP  (TCP 80)  if hosting a web app
+      - Allow HTTPS (TCP 443) if hosting a web app
 
-# Prerequisites: Salesforce Developer Edition org or Sandbox, VS Code with Salesforce Extension Pack or use the Developer Console.
+9.  Review and Launch
 
-# Steps:
+10. Select or create a Key Pair (.pem)
+    Download and keep it secure
 
-# 1. Create a Developer Org and login.
-# 2. Create a new Apex class (via Developer Console or VS Code).
-# 3. Write Selection Sort implementation (example sorts a List<Integer>):
+11. Launch -> Wait until:
+      - Instance State  = running
+      - Status Checks   = passed
 
-# Apex class (paste into Developer Console → File → New → Apex Class):
+12. Connect to Instance:
+      chmod 400 key.pem
+      ssh -i key.pem ec2-user@PUBLIC_IP
+
+    Note: Username varies by AMI:
+      - Amazon Linux : ec2-user
+      - Ubuntu       : ubuntu
+      - CentOS       : centos
+
+13. Post-launch Setup:
+      Amazon Linux : sudo yum update -y
+      Ubuntu       : sudo apt update && sudo apt upgrade -y
+      Install web server/runtime (Apache, Nginx, Node, Python, etc.)
+
+14. (Optional) Allocate and attach an Elastic IP for a stable public IP
+
+15. (Optional) Create an AMI from the configured instance for reuse or autoscaling
+
+================================================================================
+PROBLEM 12A: GOOGLE APP ENGINE - DEPLOY A SIMPLE WEB APPLICATION
+================================================================================
+
+Prerequisites:
+  - Google Cloud account with billing enabled
+  - gcloud CLI installed and authenticated
+  - A GCP project created
+
+Steps:
+
+1.  Create and Configure GCP Project:
+      gcloud projects create PROJECT_ID
+      gcloud config set project PROJECT_ID
+      gcloud app create --region=REGION
+
+2.  Prepare the Application (Python Flask example):
+
+      main.py:
+        - Create Flask app
+        - Add route returning "Hello World"
+
+      app.yaml:
+        - runtime: python39
+        - entrypoint: gunicorn -b :$PORT main:app
+
+      requirements.txt:
+        - flask
+        - gunicorn
+
+3.  Test Locally:
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install -r requirements.txt
+      python main.py
+      Verify output in browser at localhost
+
+4.  Deploy to App Engine:
+      gcloud app deploy app.yaml --project=PROJECT_ID
+      Confirm deployment when prompted
+
+5.  Access the App:
+      gcloud app browse
+      OR visit: https://PROJECT_ID.REGION.r.appspot.com
+
+6.  View Logs and Monitor:
+      gcloud app logs read
+      Cloud Console -> App Engine -> Versions/Services
+
+7.  Update App:
+      Modify code -> run gcloud app deploy again for a new version
+
+================================================================================
+PROBLEM 12B (OR): KVM VIRTUALIZATION - INSTALLATION AND CONFIGURATION
+================================================================================
+
+Target OS: Ubuntu / Debian
+
+Steps:
+
+1.  Verify CPU Virtualization Support:
+      egrep -c '(vmx|svm)' /proc/cpuinfo
+      Non-zero output means virtualization is supported
+
+2.  Install Required Packages:
+      sudo apt update
+      sudo apt install -y qemu-kvm libvirt-daemon-system \
+           libvirt-clients bridge-utils virt-manager
+
+3.  Add User to Required Groups:
+      sudo usermod -aG libvirt,kvm $USER
+      Log out and log back in to apply changes
+
+4.  Start and Enable libvirt Service:
+      sudo systemctl enable --now libvirtd
+
+5.  Verify Installation:
+      virsh list --all
+      virsh capabilities
+
+6.  Create a VM using virt-install:
+      sudo virt-install \
+        --name testvm \
+        --vcpus 2 \
+        --memory 2048 \
+        --disk size=20 \
+        --cdrom /path/to/installer.iso \
+        --os-variant ubuntu22.04 \
+        --network network=default \
+        --graphics none \
+        --console pty,target_type=serial
+
+7.  Manage VMs with virsh commands:
+      virsh start    testvm
+      virsh shutdown testvm
+      virsh destroy  testvm
+      virsh snapshot-create-as testvm snap1
+
+8.  (Optional) Configure bridged networking for VMs to access LAN
+
+9.  (Optional) Enable remote access via virt-manager over SSH
+
+10. Configure storage pools and networks as needed
+
+================================================================================
+PROBLEM 13: SALESFORCE - APEX APPLICATION WITH SELECTION SORT
+================================================================================
+
+Prerequisites:
+  - Salesforce Developer Edition Org or Sandbox
+  - VS Code with Salesforce Extension Pack OR Developer Console
+
+--------------------------------------------------------------------------------
+Apex Class: SelectionSortUtil
+--------------------------------------------------------------------------------
 
 public class SelectionSortUtil {
     public static List<Integer> selectionSort(List<Integer> arr) {
@@ -571,23 +701,18 @@ public class SelectionSortUtil {
         return arr;
     }
 
-    // Test method
     @IsTest
     private static void testSelectionSort() {
-        List<Integer> input = new List<Integer>{64,25,12,22,11};
+        List<Integer> input = new List<Integer>{64, 25, 12, 22, 11};
         List<Integer> sorted = selectionSort(new List<Integer>(input));
-        System.assertEquals(new List<Integer>{11,12,22,25,64}, sorted);
+        System.assertEquals(new List<Integer>{11, 12, 22, 25, 64}, sorted);
     }
 }
 
-# 4. Save the class.
-# 5. Run the test:
-#    - In Developer Console: Test → New Run → select testSelectionSort → Run.
-#    - Or run via Setup → Apex Test Execution.
-# 6. (Optional) Expose as REST endpoint:
-#    - Add another Apex class annotated @RestResource to accept lists and return sorted result.
+--------------------------------------------------------------------------------
+Optional REST Endpoint: SelectionSortService
+--------------------------------------------------------------------------------
 
-# Example REST wrapper:
 @RestResource(urlMapping='/selectionsort/*')
 global with sharing class SelectionSortService {
     @HttpPost
@@ -596,6 +721,29 @@ global with sharing class SelectionSortService {
     }
 }
 
+--------------------------------------------------------------------------------
+Deployment Steps:
+--------------------------------------------------------------------------------
 
-# 7. Invoke via Workbench or REST client with session auth (or create a connected app / OAuth token).
-# 8. Verify results and add additional tests for edge cases (empty list, null, duplicates).
+1.  Login to Salesforce Developer Org
+
+2.  Open Developer Console -> File -> New -> Apex Class
+
+3.  Paste SelectionSortUtil class -> Save
+
+4.  Run Tests:
+      Developer Console -> Test -> New Run -> Select testSelectionSort -> Run
+      OR: Setup -> Apex Test Execution
+
+5.  (Optional) Deploy REST wrapper class SelectionSortService
+
+6.  Invoke via Workbench or any REST client using OAuth token
+
+7.  Add edge case tests:
+      - Empty list
+      - Null input
+      - Duplicate values
+
+================================================================================
+                                  END OF FILE
+================================================================================
