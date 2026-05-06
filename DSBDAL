@@ -136,7 +136,7 @@ plt.show()
 
 
 ############
-#PRACTICAL 3 - Basic Statistics - Measures of Central Tendencies and Variance
+# PRACTICAL 3 - Basic Statistics - Measures of Central Tendencies and Variance
 # - Summary statistics grouped by a categorical variable:
 #    - Choose one numeric variable and one categorical variable.
 #    - Calculate mean, median, minimum, maximum, standard deviation for the numeric variable grouped by categories.
