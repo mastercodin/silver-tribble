@@ -747,3 +747,3796 @@ Deployment Steps:
 ================================================================================
                                   END OF FILE
 ================================================================================
+
+
+================================================================================
+                    LP II - COMPLETE THEORY & CODE EXPLANATION GUIDE
+================================================================================
+
+================================================================================
+                              TABLE OF CONTENTS
+================================================================================
+
+1.  DFS  - Depth First Search
+2.  BFS  - Breadth First Search
+3.  A*   - Algorithm for 8-Puzzle
+4.  Greedy Search - Selection Sort
+5.  Greedy MST - Generic / Union-Find Based
+6.  Prim's MST
+7.  Kruskal's MST
+8.  Dijkstra's Algorithm
+9.  N-Queens Backtracking
+10. Customer Support Chatbot
+11. Amazon EC2
+12. Google App Engine / KVM Virtualization
+13. Salesforce Apex with Selection Sort
+
+================================================================================
+PROBLEM 1: DEPTH FIRST SEARCH (DFS)
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS A GRAPH?
+
+Before understanding DFS, you need to understand what a graph is.
+
+A graph is a data structure that consists of:
+  - Vertices (Nodes) : The individual elements or points
+  - Edges            : Connections between vertices
+
+Think of a graph like a map of cities:
+  - Cities = Vertices
+  - Roads between cities = Edges
+
+Example Graph:
+
+        0
+       / \
+      1   2
+     / \ / \
+    3  4 5  6
+
+This means:
+  - City 0 connects to City 1 and City 2
+  - City 1 connects to City 0, City 3, and City 4
+  - City 2 connects to City 0, City 5, and City 6
+  - Cities 3, 4, 5, 6 are leaf nodes (connect only back to parent)
+
+
+TYPES OF GRAPHS
+
+Undirected Graph:
+  Edges have no direction.
+  If A connects to B, then B also connects to A.
+  Like a two-way road: you can go from A to B or B to A.
+
+Directed Graph:
+  Edges have direction.
+  A connects to B does NOT mean B connects to A.
+  Like a one-way road.
+
+The code in this problem uses an UNDIRECTED graph.
+
+
+HOW A GRAPH IS REPRESENTED IN CODE
+
+The code uses an Adjacency List representation.
+This is simply a dictionary where:
+  - Key   = the vertex / node number
+  - Value = list of all neighbors (vertices directly connected to this one)
+
+graph = {
+    0: [1, 2],       vertex 0 connects to vertices 1 and 2
+    1: [0, 3, 4],    vertex 1 connects to vertices 0, 3, and 4
+    2: [0, 5, 6],    vertex 2 connects to vertices 0, 5, and 6
+    3: [1],          vertex 3 connects only to vertex 1
+    4: [1],          vertex 4 connects only to vertex 1
+    5: [2],          vertex 5 connects only to vertex 2
+    6: [2]           vertex 6 connects only to vertex 2
+}
+
+Since the graph is undirected, each edge appears twice:
+  - If 1 is in 0's neighbor list, then 0 must also be in 1's neighbor list
+  - This allows travel in both directions
+
+
+WHAT IS GRAPH TRAVERSAL?
+
+Traversal means visiting every vertex in the graph exactly once in some order.
+
+Why do we need traversal?
+  - Finding if a path exists between two points
+  - Finding all connected components
+  - Detecting cycles in a graph
+  - Solving maze problems
+  - Web crawling
+
+
+WHAT IS DFS (DEPTH FIRST SEARCH)?
+
+DFS is a graph traversal algorithm that:
+  1. Starts at a given vertex
+  2. Goes as DEEP as possible along one path before backtracking
+  3. Uses recursion (or a stack) to remember where it came from
+
+The Key Idea:
+  Go deep first, then come back and explore other paths.
+
+Analogy:
+  Imagine you are exploring a maze.
+  - You pick one direction and keep going forward until you hit a dead end
+  - When you hit a dead end, you back up to the last junction
+  - Then you try a different path from that junction
+  - You keep doing this until you have explored everywhere
+
+
+DFS STEP-BY-STEP EXAMPLE
+
+Using the graph shown above, starting from vertex 0:
+
+Step 1: Visit 0
+        Print "0"
+        Mark 0 as visited
+        Neighbors of 0 are [1, 2]
+        Go to first unvisited neighbor: 1
+
+Step 2: Visit 1
+        Print "1"
+        Mark 1 as visited
+        Neighbors of 1 are [0, 3, 4]
+        0 is already visited, skip it
+        Go to first unvisited neighbor: 3
+
+Step 3: Visit 3
+        Print "3"
+        Mark 3 as visited
+        Neighbors of 3 are [1]
+        1 is already visited
+        Dead end! Return back to vertex 1
+
+Step 4: Back at vertex 1
+        Next unvisited neighbor is 4
+        Visit 4
+        Print "4"
+        Mark 4 as visited
+        Neighbors of 4 are [1]
+        1 is already visited
+        Dead end! Return back to vertex 1
+
+Step 5: All neighbors of 1 are explored
+        Return back to vertex 0
+
+Step 6: Back at vertex 0
+        Next unvisited neighbor is 2
+        Visit 2
+        Print "2"
+        Mark 2 as visited
+        Neighbors of 2 are [0, 5, 6]
+        0 is already visited, skip it
+        Go to first unvisited neighbor: 5
+
+Step 7: Visit 5
+        Print "5"
+        Dead end! Return back to vertex 2
+
+Step 8: Visit 6
+        Print "6"
+        Dead end! Return back to vertex 2
+
+All vertices visited!
+Final Output: 0 1 3 4 2 5 6
+
+
+WHY DO WE USE A VISITED SET?
+
+Without tracking visited vertices, we would go in circles forever!
+
+Example of what would happen without visited set:
+  0 goes to 1
+  1 goes back to 0
+  0 goes back to 1
+  1 goes back to 0
+  ... infinite loop!
+
+The visited set prevents us from revisiting nodes we have already explored.
+
+
+RECURSION IN DFS
+
+Recursion means a function calling itself.
+
+DFS naturally uses recursion because:
+  - When you visit a neighbor, you do the SAME thing
+    (visit its neighbors, then their neighbors, and so on)
+  - The recursion automatically handles backtracking
+    (when the function returns, execution goes back to where it was called)
+
+The Call Stack for DFS looks like this:
+
+dfs(0)
+  calls dfs(1)
+    calls dfs(3)
+      returns (dead end, no unvisited neighbors)
+    calls dfs(4)
+      returns (dead end)
+    returns (all neighbors explored)
+  calls dfs(2)
+    calls dfs(5)
+      returns (dead end)
+    calls dfs(6)
+      returns (dead end)
+    returns (all neighbors explored)
+  returns (all done)
+
+
+TIME AND SPACE COMPLEXITY
+
+Time Complexity:  O(V + E)
+  - V = number of vertices
+  - E = number of edges
+  - We visit each vertex exactly once (O(V))
+  - We check each edge exactly once (O(E))
+  - Total: O(V + E)
+
+Space Complexity: O(V)
+  - The visited set stores at most V vertices
+  - The recursion call stack goes at most V levels deep
+  - Total extra space: O(V)
+
+
+APPLICATIONS OF DFS
+
+  1. Maze solving          - Finding a path through a maze
+  2. Topological sorting   - Ordering tasks with dependencies
+  3. Cycle detection       - Finding loops in a graph
+  4. Connected components  - Finding all connected parts
+  5. Solving puzzles       - Sudoku, N-Queens, etc.
+  6. Web crawling          - Following links from page to page
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+def dfs(graph, vertex, visited=None):
+
+  Parameters:
+    graph   : The adjacency list (dictionary) representing the graph
+    vertex  : The current vertex we are visiting right now
+    visited : Set of already-visited vertices. Default is None.
+              We use None instead of an empty set as default because
+              using a mutable default argument in Python is dangerous.
+              Python creates the default object ONCE and reuses it across
+              all calls, which would cause bugs if we used visited=set().
+
+
+    if visited is None:
+        visited = set()
+
+  First time this function is called, visited will be None.
+  We create a new empty set here.
+
+  A set() is similar to a list but:
+    - Does not allow duplicate elements
+    - Checking if an element is IN a set is O(1), very fast
+    - Checking if an element is IN a list is O(n), slower
+
+
+    visited.add(vertex)
+    print(vertex, end=" ")
+
+  visited.add(vertex):
+    Mark the current vertex as visited by adding it to the set.
+    This prevents us from visiting this vertex again.
+
+  print(vertex, end=" "):
+    Print the vertex number.
+    end=" " means print a space after each number instead of a newline.
+    This makes all numbers appear on the same line separated by spaces.
+
+
+    for neighbor in graph[vertex]:
+
+  graph[vertex] gives us the list of neighbors of the current vertex.
+  We loop through each neighbor to explore them.
+
+
+        if neighbor not in visited:
+            dfs(graph, neighbor, visited)
+
+  For each neighbor:
+    Check if it has not been visited yet.
+    If it has not been visited, recursively call dfs on that neighbor.
+
+  We pass the SAME visited set to the recursive call.
+  This is crucial! All recursive calls share the same visited tracker.
+  If each call had its own visited set, we would revisit vertices.
+
+  This recursive call is where DFS goes deeper into the graph.
+  When this recursive call finishes, we automatically backtrack here
+  and continue with the next neighbor in the for loop.
+
+
+    return visited
+
+  Returns the set of all vertices that were visited.
+  This is useful if you want to know which vertices are reachable
+  from the starting vertex.
+
+
+------------------------------------------------------------------------
+VISUAL TRACE OF EXECUTION
+------------------------------------------------------------------------
+
+Call dfs(graph, 0, None)
+  visited = set()     (created because None was passed)
+  visited.add(0)  ->  visited = {0}
+  print: 0
+  Neighbors of 0: [1, 2]
+
+  neighbor = 1:
+    1 not in {0}  ->  YES, explore it
+    Call dfs(graph, 1, {0})
+      visited.add(1)  ->  visited = {0, 1}
+      print: 1
+      Neighbors of 1: [0, 3, 4]
+
+      neighbor = 0:
+        0 in {0, 1}  ->  SKIP
+
+      neighbor = 3:
+        3 not in {0, 1}  ->  YES, explore it
+        Call dfs(graph, 3, {0, 1})
+          visited.add(3)  ->  visited = {0, 1, 3}
+          print: 3
+          Neighbors of 3: [1]
+          neighbor = 1: 1 in visited -> SKIP
+          return {0, 1, 3}
+
+      neighbor = 4:
+        4 not in {0, 1, 3}  ->  YES, explore it
+        Call dfs(graph, 4, {0, 1, 3})
+          visited.add(4)  ->  visited = {0, 1, 3, 4}
+          print: 4
+          Neighbors of 4: [1]
+          neighbor = 1: 1 in visited -> SKIP
+          return {0, 1, 3, 4}
+
+      return {0, 1, 3, 4}
+
+  neighbor = 2:
+    2 not in {0, 1, 3, 4}  ->  YES, explore it
+    Call dfs(graph, 2, {0, 1, 3, 4})
+      visited.add(2)  ->  visited = {0, 1, 2, 3, 4}
+      print: 2
+      Neighbors of 2: [0, 5, 6]
+
+      neighbor = 0: SKIP
+      neighbor = 5:
+        Call dfs(graph, 5, ...)
+          print: 5
+          return
+      neighbor = 6:
+        Call dfs(graph, 6, ...)
+          print: 6
+          return
+
+      return {0, 1, 2, 3, 4, 5, 6}
+
+Final Output: 0 1 3 4 2 5 6
+
+
+================================================================================
+PROBLEM 2: BREADTH FIRST SEARCH (BFS)
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS BFS?
+
+BFS (Breadth First Search) is a traversal algorithm that:
+  1. Starts at a given vertex
+  2. Visits ALL neighbors of the current vertex first (before going deeper)
+  3. Then visits ALL neighbors of those neighbors
+  4. Explores the graph LEVEL BY LEVEL (wide first, then deep)
+
+Analogy:
+  Imagine dropping a stone into still water.
+  The ripples spread outward in expanding circles.
+  First the area right around the stone (level 1),
+  then slightly farther (level 2),
+  then even farther (level 3).
+  BFS works exactly the same way, exploring in expanding circles.
+
+
+DFS vs BFS - THE KEY DIFFERENCE
+
+Using the same graph:
+
+        0
+       / \
+      1   2
+     / \ / \
+    3  4 5  6
+
+DFS visits:  0  1  3  4  2  5  6
+  Goes deep into one branch (0 -> 1 -> 3) before trying other branches.
+  Like an explorer who keeps going forward until hitting a wall.
+
+BFS visits:  0  1  2  3  4  5  6
+  Visits all neighbors of 0 (which are 1 and 2) first.
+  Then visits all neighbors of 1 and 2 (which are 3, 4, 5, 6).
+  Like a flood spreading equally in all directions.
+
+
+BFS USES A QUEUE
+
+The key data structure for BFS is a QUEUE.
+
+Queue: First In, First Out (FIFO) - like a line of people at a shop
+  - First person to join the line is first to be served
+  - New people join at the BACK of the line
+  - People are served from the FRONT of the line
+
+Why Queue for BFS?
+  - We want to process vertices in the order we discovered them
+  - The first vertex discovered should be the first one processed
+  - This ensures we process all vertices at distance 1 (one hop from start),
+    then all at distance 2, then all at distance 3, and so on
+  - This is exactly the level-by-level exploration we want
+
+
+BFS STEP-BY-STEP EXAMPLE
+
+Graph:
+        0
+       / \
+      1   2
+     / \ / \
+    3  4 5  6
+
+Starting from vertex 0:
+
+Initial state:
+  Queue   = [0]
+  Visited = {0}
+
+Step 1:
+  Take 0 from the FRONT of queue
+  Traversal so far = [0]
+  Neighbors of 0: [1, 2]
+  Add 1 to queue (not visited), mark 1 as visited
+  Add 2 to queue (not visited), mark 2 as visited
+  Queue   = [1, 2]
+  Visited = {0, 1, 2}
+
+Step 2:
+  Take 1 from the FRONT of queue
+  Traversal so far = [0, 1]
+  Neighbors of 1: [0, 3, 4]
+  0 already visited -> skip
+  Add 3 to queue, mark 3 as visited
+  Add 4 to queue, mark 4 as visited
+  Queue   = [2, 3, 4]
+  Visited = {0, 1, 2, 3, 4}
+
+Step 3:
+  Take 2 from the FRONT of queue
+  Traversal so far = [0, 1, 2]
+  Neighbors of 2: [0, 5, 6]
+  0 already visited -> skip
+  Add 5 to queue, mark 5 as visited
+  Add 6 to queue, mark 6 as visited
+  Queue   = [3, 4, 5, 6]
+  Visited = {0, 1, 2, 3, 4, 5, 6}
+
+Step 4:
+  Take 3 from FRONT of queue
+  Traversal so far = [0, 1, 2, 3]
+  Neighbors of 3: [1]  ->  1 already visited, skip
+  Queue = [4, 5, 6]
+
+Step 5:
+  Take 4 -> Traversal = [0, 1, 2, 3, 4]
+  Queue = [5, 6]
+
+Step 6:
+  Take 5 -> Traversal = [0, 1, 2, 3, 4, 5]
+  Queue = [6]
+
+Step 7:
+  Take 6 -> Traversal = [0, 1, 2, 3, 4, 5, 6]
+  Queue = []  (empty, we are done!)
+
+Final Output: 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6
+
+
+THE deque DATA STRUCTURE
+
+Python's deque (double-ended queue) from the collections module is used.
+
+Why use deque instead of a regular Python list?
+
+For a regular Python list:
+  list.append(x)  : adds to end   -> O(1) time -> FAST
+  list.pop(0)     : removes from front -> O(n) time -> SLOW!
+                    (all elements must shift left by one position)
+
+For deque:
+  deque.append(x)    : adds to end   -> O(1) time -> FAST
+  deque.popleft()    : removes from front -> O(1) time -> FAST!
+
+Since BFS repeatedly removes from the front of the queue,
+using deque makes BFS significantly more efficient for large graphs.
+A list-based queue would be O(n) per removal, making BFS O(V * E) overall.
+With deque, BFS is O(V + E).
+
+
+BFS FINDS THE SHORTEST PATH
+
+One of the most important properties of BFS:
+BFS always finds the SHORTEST PATH (in terms of number of edges)
+between two vertices in an unweighted graph.
+
+This is because BFS explores vertices in order of their distance from start:
+  Level 0: Start vertex (distance 0 edges)
+  Level 1: All vertices exactly 1 edge away from start
+  Level 2: All vertices exactly 2 edges away from start
+  Level 3: All vertices exactly 3 edges away from start
+  and so on...
+
+When BFS first reaches any vertex, it has taken the fewest possible hops.
+This means the first time BFS visits a vertex, it has found the shortest path.
+
+DFS does NOT guarantee the shortest path.
+DFS might find a path with many hops when a shorter path exists.
+
+
+WHY MARK VISITED WHEN ADDING TO QUEUE (NOT WHEN REMOVING)?
+
+This is an important subtlety!
+
+If we mark a vertex as visited only when we REMOVE it from the queue:
+  - The same vertex might be added to the queue multiple times
+  - Once from each neighbor that discovers it
+  - This wastes memory and time
+  - Could cause incorrect behavior
+
+If we mark a vertex as visited when we ADD it to the queue:
+  - Each vertex appears in the queue AT MOST ONCE
+  - We are guaranteed the first time we add it is via the shortest path
+  - This is the correct approach
+
+
+TIME AND SPACE COMPLEXITY
+
+Time Complexity:  O(V + E)
+  Same as DFS. We visit each vertex once (O(V))
+  and examine each edge once (O(E)).
+
+Space Complexity: O(V)
+  The queue can hold at most V vertices at one time.
+  The visited set holds at most V vertices.
+
+
+APPLICATIONS OF BFS
+
+  1. Shortest path finding  - GPS navigation for unweighted paths
+  2. Social networks        - Finding people within N connections
+  3. Web crawling           - Searching web pages level by level
+  4. Network broadcasting   - Sending data to all connected nodes
+  5. Finding connected components
+  6. Checking if a graph is bipartite
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    from collections import deque
+
+Import the deque class from Python's built-in collections module.
+This gives us an efficient double-ended queue for our BFS queue.
+
+
+    def bfs(graph, start):
+
+Parameters:
+  graph : Adjacency list dictionary (same structure as DFS)
+  start : The starting vertex for BFS traversal
+
+
+    visited = {start}
+    queue = deque([start])
+    traversal = []
+
+Initialize three data structures:
+
+1. visited = {start}
+   A set containing just the start vertex.
+   Using curly braces {} with a single value creates a set (not a dict).
+   We add start immediately so we do not re-add it to the queue later.
+
+2. queue = deque([start])
+   Create a deque with the start vertex in it.
+   We wrap start in a list [start] because deque() accepts an iterable.
+   deque([0]) creates a deque containing just the number 0.
+
+3. traversal = []
+   An empty list to store the order in which we visit vertices.
+   This will be our final answer / return value.
+
+
+    while queue:
+
+Keep looping as long as the queue is not empty.
+An empty queue means we have processed all reachable vertices.
+In Python, an empty deque is falsy, so "while queue" works as intended.
+
+
+        vertex = queue.popleft()
+        traversal.append(vertex)
+
+queue.popleft():
+  Remove and return the element at the FRONT (left side) of the deque.
+  This is the vertex we will process now.
+  O(1) time complexity - this is why we use deque instead of list.
+
+traversal.append(vertex):
+  Record this vertex in our traversal order.
+
+
+        for neighbor in graph[vertex]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+For each neighbor of the current vertex:
+  - Check if this neighbor has not been visited yet
+  - If it has not been visited:
+    - Mark it as visited immediately (BEFORE adding to queue)
+    - Add it to the BACK (right side) of the queue for future processing
+
+Marking visited when adding (not when popping) ensures:
+  - No vertex appears in queue more than once
+  - We avoid processing duplicates
+
+
+    return traversal
+
+Return the list showing the exact order vertices were visited.
+This list represents the BFS traversal order.
+
+
+    print(" -> ".join(map(str, bfs(graph, 0))))
+
+Breaking this down step by step:
+  bfs(graph, 0)          : Returns [0, 1, 2, 3, 4, 5, 6]
+  map(str, [0,1,2,...])  : Converts each int to string -> ['0','1','2',...]
+  " -> ".join([...])     : Joins strings with " -> " separator
+  Result: "0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6"
+
+
+Expected Output:
+  BFS Traversal starting from vertex 0:
+  0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6
+
+
+================================================================================
+PROBLEM 3: A* ALGORITHM (8-PUZZLE)
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS THE 8-PUZZLE PROBLEM?
+
+The 8-Puzzle is a classic sliding puzzle consisting of:
+  - A 3x3 grid (9 squares total)
+  - 8 numbered tiles (labeled 1 through 8)
+  - One blank space (represented as 0 in the code)
+  - The blank space allows adjacent tiles to slide into it
+
+The goal is to reach a specific arrangement (the goal state)
+by sliding tiles one at a time into the blank space.
+
+Example:
+
+  Start State:        Goal State:
+  +---+---+---+       +---+---+---+
+  | 1 | 2 | 5 |       | 1 | 2 | 5 |
+  +---+---+---+       +---+---+---+
+  | 3 | 4 |   |  -->  | 3 | 4 | 8 |
+  +---+---+---+       +---+---+---+
+  | 6 | 7 | 8 |       | 6 | 7 |   |
+  +---+---+---+       +---+---+---+
+
+In code, the board is represented as a flat list:
+  Start: [1, 2, 5, 3, 4, 0, 6, 7, 8]
+  Goal:  [1, 2, 5, 3, 4, 8, 6, 7, 0]
+
+Flat index to 2D position mapping:
+  Index: 0 1 2 3 4 5 6 7 8
+  Grid positions:
+    0 1 2     row 0
+    3 4 5     row 1
+    6 7 8     row 2
+
+  To get row from index: row = index // 3  (integer division)
+  To get col from index: col = index % 3   (remainder / modulo)
+
+  Example: index 5 -> row = 5//3 = 1, col = 5%3 = 2
+           So index 5 is at row 1, column 2 (middle-right position)
+
+
+WHAT IS A HEURISTIC?
+
+A heuristic is an educated guess or intelligent estimation.
+
+In pathfinding/search problems:
+  - A heuristic estimates how far we are from the goal
+  - It helps us decide which states to explore first
+  - A good heuristic makes the search MUCH faster than blind search
+
+Without a heuristic, we would explore states randomly or in no particular order.
+With a good heuristic, we explore the most promising states first.
+
+
+MANHATTAN DISTANCE HEURISTIC
+
+The Manhattan Distance (also called "taxicab distance") measures
+the distance between two points if you can only move horizontally
+or vertically (no diagonal moves), like a taxi on a grid of city streets.
+
+Formula for two positions:
+  Manhattan Distance = |row1 - row2| + |col1 - col2|
+
+For the 8-puzzle:
+  For each tile, calculate how many moves it would need to reach its goal position
+  if the board were empty (no other tiles in the way).
+  Sum up these distances for all tiles (excluding the blank).
+
+Example calculation:
+
+  Current board:  1 2 5    Goal board:  1 2 5
+                  3 4 0                 3 4 8
+                  6 7 8                 6 7 0
+
+  Tile 8:
+    Current position: index 8 -> row = 8//3 = 2, col = 8%3 = 2
+    Goal position:    index 5 -> row = 5//3 = 1, col = 5%3 = 2
+    Manhattan distance = |2-1| + |2-2| = 1 + 0 = 1
+
+  All other tiles (1,2,3,4,5,6,7) are already in goal positions.
+  Their Manhattan distance = 0.
+
+  Total heuristic value = 1
+
+This means we estimate at least 1 move is needed to reach the goal.
+(In this case, exactly 1 move: slide 8 down into blank space)
+
+
+WHY IS MANHATTAN DISTANCE A GOOD HEURISTIC?
+
+Manhattan Distance is an ADMISSIBLE heuristic.
+
+Admissible means: The heuristic NEVER overestimates the true cost.
+  - Tiles can only move one square at a time
+  - Manhattan distance gives the MINIMUM moves a tile would need
+    if no other tiles were in the way
+  - The actual moves needed is always >= Manhattan distance
+    (because other tiles might be in the way)
+  - Therefore, Manhattan distance never overestimates
+
+An admissible heuristic guarantees A* finds the OPTIMAL solution.
+
+
+WHAT IS THE A* ALGORITHM?
+
+A* (pronounced "A-Star") is an intelligent search algorithm that:
+  - Finds the OPTIMAL (shortest/least-cost) path from start to goal
+  - Uses a heuristic to guide the search toward the goal
+  - Combines the benefits of:
+    - Dijkstra's algorithm: guaranteed optimal path
+    - Greedy Best-First Search: uses heuristic for efficiency
+
+The Key Formula:
+  f(n) = g(n) + h(n)
+
+  Where:
+    n    = current state/node
+    g(n) = actual cost from start state to current state n
+           (in 8-puzzle: number of moves made so far)
+    h(n) = heuristic estimate from current state to goal
+           (in 8-puzzle: Manhattan distance)
+    f(n) = total estimated cost of the best solution through n
+
+A* always explores the state with the LOWEST f(n) value next.
+This guides the search toward the goal intelligently.
+
+
+HOW A* WORKS (STEP BY STEP)
+
+1. Create initial state from the start configuration
+2. Add it to the open list (priority queue / min-heap)
+3. While open list is not empty:
+   a. Pop the state with the LOWEST f(n) from the open list
+   b. If this state IS the goal, we are done! Trace back the path.
+   c. If not goal, add to closed list (we have fully explored it)
+   d. Generate all valid neighboring states (possible moves)
+   e. For each neighbor:
+      - If already in closed list, skip it (already explored optimally)
+      - Calculate f(n) = g(n) + h(n)
+      - Add to open list for future exploration
+4. If open list becomes empty with no solution, puzzle is unsolvable
+
+
+OPEN LIST AND CLOSED LIST
+
+Open List (the heap):
+  States we have DISCOVERED but not yet fully explored.
+  We know these states exist, but have not generated their neighbors yet.
+  Always process the state with lowest f(n) from here.
+
+Closed List (the set):
+  States we have FULLY EXPLORED.
+  We have already generated all their neighbors.
+  We never re-add these to the open list.
+  This prevents infinite loops.
+
+
+PRIORITY QUEUE / MIN-HEAP
+
+A* requires a priority queue where the state with LOWEST f(n)
+is always retrieved first.
+
+Python's heapq module provides a min-heap:
+  heapq.heappush(heap, item) : Add item, maintaining heap property
+  heapq.heappop(heap)        : Remove and return the smallest item
+
+The heap is always sorted so the minimum element is at index 0.
+Both push and pop are O(log n) where n is the number of elements.
+
+
+STATE SPACE OF 8-PUZZLE
+
+Total possible arrangements of 9 tiles: 9! = 362,880
+
+However, exactly HALF of all arrangements are reachable from any given state.
+(The other half would require removing a tile and reinserting it.)
+
+So the state space is 9!/2 = 181,440 possible states.
+
+A* with Manhattan Distance heuristic explores only a tiny fraction
+of these states, making it very efficient.
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    import heapq
+
+Import Python's heap queue algorithm module.
+Used to implement the priority queue (min-heap) for A*.
+
+
+THE PuzzleState CLASS
+
+This class represents ONE configuration (arrangement) of the 8-puzzle.
+Each object of this class stores the current board state and all related info.
+
+    class PuzzleState:
+        def __init__(self, board, goal, moves=0, parent=None):
+            self.board = board
+            self.goal = goal
+            self.moves = moves
+            self.parent = parent
+            self.blank = board.index(0)
+            self.priority = self.moves + self.heuristic()
+
+Parameters explained:
+
+  self.board:
+    The current arrangement as a flat list of 9 elements.
+    [1, 2, 5, 3, 4, 0, 6, 7, 8] represents:
+      Row 0: 1 2 5
+      Row 1: 3 4 0   (blank is in the middle-right)
+      Row 2: 6 7 8
+
+  self.goal:
+    The target arrangement we are trying to reach.
+
+  self.moves:
+    How many moves we made to reach this state from the start.
+    This is g(n) in the f(n) = g(n) + h(n) formula.
+    Starts at 0 for the initial state.
+
+  self.parent:
+    A reference to the previous PuzzleState (the state before this one).
+    Used to trace back the solution path once we find the goal.
+    None for the initial state (no previous state).
+
+  self.blank:
+    board.index(0) finds the position (index) of the blank tile (0)
+    in the flat list.
+    If board = [1, 2, 5, 3, 4, 0, 6, 7, 8], then blank = 5
+
+  self.priority:
+    This is f(n) = g(n) + h(n) = moves + heuristic()
+    The priority queue will use this to order states.
+    Lower priority = explored first.
+
+
+    def heuristic(self):
+        return sum(
+            abs(i//3 - self.goal.index(tile)//3) + abs(i%3 - self.goal.index(tile)%3)
+            for i, tile in enumerate(self.board) if tile != 0
+        )
+
+This calculates the Manhattan Distance heuristic.
+
+Breaking it down:
+
+  enumerate(self.board) produces (index, value) pairs:
+    (0, 1), (1, 2), (2, 5), (3, 3), (4, 4), (5, 0), (6, 6), (7, 7), (8, 8)
+
+  For each (i, tile) pair where tile != 0 (skip the blank):
+
+    i = current flat list index of this tile in the CURRENT board
+    tile = the tile's number/value
+
+    self.goal.index(tile) = flat list index of this tile in the GOAL board
+
+    Convert current position to 2D:
+      current_row = i // 3
+      current_col = i % 3
+
+    Convert goal position to 2D:
+      goal_row = self.goal.index(tile) // 3
+      goal_col = self.goal.index(tile) % 3
+
+    Manhattan distance for this one tile:
+      abs(current_row - goal_row) + abs(current_col - goal_col)
+
+    abs() = absolute value (makes negative numbers positive)
+
+  sum(...) adds up all individual tile Manhattan distances.
+
+
+    def neighbors(self):
+        n = []
+        r, c = divmod(self.blank, 3)
+        for dr, dc in ((-1,0),(1,0),(0,-1),(0,1)):
+            nr, nc = r+dr, c+dc
+            if 0 <= nr < 3 and 0 <= nc < 3:
+                nb = self.board[:]
+                j = nr*3 + nc
+                nb[self.blank], nb[j] = nb[j], nb[self.blank]
+                n.append(PuzzleState(nb, self.goal, self.moves+1, self))
+        return n
+
+This generates all valid next states by sliding tiles into the blank.
+
+  divmod(self.blank, 3):
+    Returns (quotient, remainder) as a tuple.
+    divmod(5, 3) = (1, 2), meaning blank is at row 1, column 2.
+    This converts flat index to 2D row, column.
+
+  Directions we try moving the blank:
+    (-1, 0) = Move blank UP    (decrease row by 1)
+    ( 1, 0) = Move blank DOWN  (increase row by 1)
+    ( 0,-1) = Move blank LEFT  (decrease col by 1)
+    ( 0, 1) = Move blank RIGHT (increase col by 1)
+
+  For each direction (dr, dc):
+    nr, nc = r+dr, c+dc    (new position after moving in this direction)
+
+    if 0 <= nr < 3 and 0 <= nc < 3:
+      Check if new position is within the 3x3 grid bounds.
+      Row and col must both be between 0 and 2 inclusive.
+
+    nb = self.board[:]:
+      Make a COPY of the board.
+      The [:] syntax creates a shallow copy of the list.
+      Important: We must copy, not modify the original!
+
+    j = nr*3 + nc:
+      Convert 2D position (nr, nc) back to flat list index.
+      row * 3 + col = flat index
+
+    nb[self.blank], nb[j] = nb[j], nb[self.blank]:
+      Swap the blank and the tile at the new position.
+      This is the actual "slide" operation.
+      Python's tuple unpacking makes this a clean one-liner swap.
+
+    PuzzleState(nb, self.goal, self.moves+1, self):
+      Create a new state with:
+        nb        = new board after the slide
+        self.goal = same goal (unchanged)
+        self.moves+1 = one more move than current state
+        self = current state becomes the parent of new state
+
+
+    def is_goal(self): return self.board == self.goal
+
+Simple comparison: Is the current board arrangement equal to goal?
+Returns True or False.
+
+
+    def __lt__(self, other): return self.priority < other.priority
+
+The __lt__ method defines the "less than" comparison for PuzzleState objects.
+
+Why is this needed?
+  heapq needs to compare PuzzleState objects to determine ordering.
+  When two states have equal priority (f value), heapq needs to break ties.
+  Without __lt__, Python would raise a TypeError when comparing objects.
+  With __lt__, heapq can order states by their f(n) = priority values.
+
+
+    def __hash__(self): return hash(tuple(self.board))
+
+The __hash__ method makes PuzzleState objects hashable.
+
+Why is this needed?
+  We store explored states in a set (closed list).
+  Sets in Python require elements to be hashable.
+  Lists are NOT hashable (they can change, so Python refuses to hash them).
+  Tuples ARE hashable (they cannot change).
+  hash(tuple(self.board)) converts board list to tuple, then hashes it.
+
+  Two states with the same board configuration will have the same hash,
+  which is the correct behavior for detecting already-explored states.
+
+
+THE A* SEARCH FUNCTION
+
+    def a_star(start, goal):
+        start_state = PuzzleState(start, goal)
+        open_heap = [start_state]
+        closed = set()
+
+  start_state: Create the initial puzzle state with 0 moves made so far.
+  open_heap:   Priority queue (min-heap) initialized with just start state.
+  closed:      Empty set for storing fully explored states.
+
+
+    while open_heap:
+        cur = heapq.heappop(open_heap)
+
+Keep exploring while there are states to explore.
+heapq.heappop() removes and returns the state with the LOWEST priority (f value).
+This is the state with the most promising path (fewest estimated total moves).
+
+
+        if cur.is_goal():
+            path = []
+            while cur:
+                path.append(cur.board)
+                cur = cur.parent
+            return path[::-1]
+
+If we popped the goal state, we found the solution!
+
+Trace back the path using parent pointers:
+  - Start at the goal state
+  - Follow parent links: goal -> previous state -> ... -> start state
+  - Each state knows its parent (the state we came from)
+  - We collect all board configurations along the way
+  - path[::-1] reverses the list to go from start to goal
+
+
+        closed.add(tuple(cur.board))
+
+Add current state to the closed set.
+We convert board list to tuple because sets require hashable elements.
+Lists cannot be in sets; tuples can.
+
+
+        for nb in cur.neighbors():
+            if tuple(nb.board) in closed:
+                continue
+            heapq.heappush(open_heap, nb)
+
+Generate all neighboring states (valid moves from current state).
+For each neighbor:
+  - If its board configuration is already in closed set, skip it
+    (we've already found the optimal path to this configuration)
+  - Otherwise, add to the open heap for future exploration
+  - heapq will sort it based on its priority (f value)
+
+
+PRINT BOARD FUNCTION
+
+    def print_board(b):
+        for i in range(0, 9, 3):
+            print(b[i:i+3])
+        print()
+
+Prints the flat list b as a 3x3 grid.
+
+  range(0, 9, 3) generates [0, 3, 6] (start=0, stop=9, step=3)
+  b[0:3] = first three elements  = first row  = [1, 2, 5]
+  b[3:6] = middle three elements = second row = [3, 4, 0]
+  b[6:9] = last three elements   = third row  = [6, 7, 8]
+
+  print() at the end adds a blank line between boards for readability.
+
+
+COMPLETE EXAMPLE WALKTHROUGH
+
+Start: [1,2,5,3,4,0,6,7,8]   Goal: [1,2,5,3,4,8,6,7,0]
+
+Visualized:
+  Start:  1 2 5    Goal:  1 2 5
+          3 4 _           3 4 8
+          6 7 8           6 7 _
+
+Blank is at flat index 5 (row 1, col 2).
+
+Initial state:
+  g(start) = 0 moves
+  h(start) = Manhattan distance = 1 (only tile 8 is out of place)
+  f(start) = 0 + 1 = 1
+
+Neighbors of start (blank can move in these directions):
+  Move UP:    Swap blank(idx 5) with tile 5(idx 2)
+              New board: [1,2,0,3,4,5,6,7,8]
+  Move DOWN:  Swap blank(idx 5) with tile 8(idx 8)
+              New board: [1,2,5,3,4,8,6,7,0]  <- THIS IS THE GOAL!
+  Move LEFT:  Swap blank(idx 5) with tile 4(idx 4)
+              New board: [1,2,5,3,0,4,6,7,8]
+
+A* calculates f for each neighbor and adds them to the heap.
+It picks the state with lowest f to explore next.
+Moving DOWN produces the goal state with f = 1 + 0 = 1.
+A* finds the solution in just 1 move!
+
+
+================================================================================
+PROBLEM 4: GREEDY SEARCH - SELECTION SORT
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS A GREEDY ALGORITHM?
+
+A Greedy Algorithm makes the LOCALLY OPTIMAL choice at each step,
+hoping that these local choices lead to a globally optimal solution.
+
+Key characteristics of Greedy Algorithms:
+  - At each step, pick the best option currently available
+  - Never look back or reconsider past choices
+  - Simple to understand and implement
+  - Fast execution
+  - Does NOT always give the globally optimal solution for all problems
+    (works perfectly for some problems, fails for others)
+
+Real-life analogy:
+  Imagine you are collecting coins scattered on a path.
+  Greedy approach: Always pick up the largest coin you can see right now.
+  This might not give you the maximum total if a smaller coin leads to
+  a pile of large coins around the corner.
+
+Another analogy:
+  Imagine hiking in fog to the highest peak.
+  Greedy approach: Always step in the direction that goes most uphill.
+  This might get you to a local peak, not the highest mountain.
+
+
+WHAT IS SELECTION SORT?
+
+Selection Sort is a simple comparison-based sorting algorithm.
+
+The main idea:
+  1. The array is divided into two parts:
+     - Left part: Already sorted
+     - Right part: Not yet sorted
+  2. Initially, the sorted part is empty and unsorted part is the whole array
+  3. Repeatedly find the MINIMUM element in the unsorted part
+  4. SWAP it to the end of the sorted part (beginning of unsorted part)
+  5. The sorted part grows by one element each iteration
+
+WHY IS SELECTION SORT A GREEDY ALGORITHM?
+
+At each step, Selection Sort greedily picks the MINIMUM (the locally best choice)
+from the remaining unsorted elements and places it in its correct position.
+
+This greedy choice (always pick the minimum next) is applied repeatedly
+until the entire array is sorted.
+
+The greedy strategy works perfectly here because:
+  - The smallest available element definitely belongs at the current position
+  - Placing it there never makes the overall sorting worse
+  - Each greedy choice is globally optimal in this context
+
+
+SELECTION SORT STEP-BY-STEP EXAMPLE
+
+Original Array: [64, 25, 12, 22, 11]
+
+Positions:       0   1   2   3   4
+
+Step 1 (i=0):
+  Find minimum in entire array [64, 25, 12, 22, 11]
+  Minimum is 11 at index 4
+  Swap arr[0]=64 with arr[4]=11
+  Result: [11, 25, 12, 22, 64]
+  Sorted: [11]  |  Unsorted: [25, 12, 22, 64]
+
+Step 2 (i=1):
+  Find minimum in unsorted part [25, 12, 22, 64]
+  Minimum is 12 at index 2
+  Swap arr[1]=25 with arr[2]=12
+  Result: [11, 12, 25, 22, 64]
+  Sorted: [11, 12]  |  Unsorted: [25, 22, 64]
+
+Step 3 (i=2):
+  Find minimum in unsorted part [25, 22, 64]
+  Minimum is 22 at index 3
+  Swap arr[2]=25 with arr[3]=22
+  Result: [11, 12, 22, 25, 64]
+  Sorted: [11, 12, 22]  |  Unsorted: [25, 64]
+
+Step 4 (i=3):
+  Find minimum in unsorted part [25, 64]
+  Minimum is 25 at index 3
+  Swap arr[3]=25 with arr[3]=25 (same index, no actual change)
+  Result: [11, 12, 22, 25, 64]
+  Sorted: [11, 12, 22, 25]  |  Unsorted: [64]
+
+Step 5 (i=4):
+  Only one element left [64], it must already be in place
+  Result: [11, 12, 22, 25, 64]
+  Sorted: [11, 12, 22, 25, 64]
+
+Final Sorted Array: [11, 12, 22, 25, 64]
+
+
+TIME COMPLEXITY ANALYSIS
+
+The outer loop runs n times (for each position i from 0 to n-1).
+The inner loop runs n-1, n-2, n-3, ..., 1 times.
+
+Total comparisons = (n-1) + (n-2) + (n-3) + ... + 1
+                  = n * (n-1) / 2
+                  = O(n^2)
+
+Best case:  O(n^2)  Even if array is already sorted, we still do all comparisons
+Average:    O(n^2)
+Worst case: O(n^2)
+
+Space complexity: O(1)
+  Sorts the array IN-PLACE (modifies the original array)
+  Uses only a few extra variables (min_index, loop counters)
+  No extra arrays needed
+
+
+ADVANTAGE OF SELECTION SORT
+
+Selection Sort makes at most n-1 swaps (one per outer loop iteration).
+This is useful in scenarios where SWAP operations are expensive.
+
+For comparison, Bubble Sort can make O(n^2) swaps in the worst case.
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    def selection_sort(arr):
+        n = len(arr)
+
+  arr: The list we want to sort (it will be modified in place)
+  n:   Total number of elements in the array
+       len() returns the length (count) of elements in a list
+
+
+    for i in range(n):
+
+Outer loop. i represents the current position we are FILLING.
+  When i=0: We are finding the correct element for position 0
+  When i=1: We are finding the correct element for position 1
+  ...and so on until all positions are filled.
+
+range(n) generates [0, 1, 2, ..., n-1]
+
+
+        min_index = i
+
+Assume the minimum element in the unsorted portion is at position i.
+This is just an initial assumption that we will verify/update next.
+We start the search for minimum from the current position i.
+
+
+        for j in range(i + 1, n):
+            if arr[j] < arr[min_index]:
+                min_index = j
+
+Inner loop. Searches through the unsorted portion (from i+1 to end).
+
+  j starts at i+1 (we already assume arr[i] is minimum, start comparing after it)
+  j goes up to n-1 (last element)
+
+  If we find any element smaller than our current assumed minimum:
+    Update min_index to point to that smaller element
+
+After the inner loop finishes, min_index points to the actual minimum
+element in the unsorted portion arr[i..n-1].
+
+
+        arr[i], arr[min_index] = arr[min_index], arr[i]
+
+Swap the minimum element into position i.
+
+Python's elegant simultaneous assignment:
+  The right side (arr[min_index], arr[i]) is evaluated first,
+  creating a temporary tuple.
+  Then values are assigned to the left side simultaneously.
+  This is equivalent to:
+    temp = arr[i]
+    arr[i] = arr[min_index]
+    arr[min_index] = temp
+
+After this swap, arr[i] now holds the i-th smallest element.
+arr[0..i] is now the sorted portion.
+
+
+        print(f"Step {i+1}: {arr}")
+
+Print the current state of the array after each step.
+f"..." is an f-string (formatted string literal).
+{i+1} inserts the value of i+1 into the string.
+{arr} inserts the string representation of the array.
+
+We use i+1 because i starts at 0 but humans count steps from 1.
+
+
+    return arr
+
+Return the sorted array.
+Note: The original array was modified in place, so the caller's array
+is also sorted. The return is just for convenience.
+
+
+COMPLETE VISUAL TRACE
+
+Original Array: [64, 25, 12, 22, 11]
+
+i=0, min_index starts at 0 (arr[0]=64):
+  j=1: arr[1]=25 < arr[0]=64?  No
+  j=2: arr[2]=12 < arr[0]=64?  Yes -> min_index=2
+  j=3: arr[3]=22 < arr[2]=12?  No
+  j=4: arr[4]=11 < arr[2]=12?  Yes -> min_index=4
+  Swap arr[0]=64 with arr[4]=11
+  Step 1: [11, 25, 12, 22, 64]
+
+i=1, min_index starts at 1 (arr[1]=25):
+  j=2: arr[2]=12 < arr[1]=25?  Yes -> min_index=2
+  j=3: arr[3]=22 < arr[2]=12?  No
+  j=4: arr[4]=64 < arr[2]=12?  No
+  Swap arr[1]=25 with arr[2]=12
+  Step 2: [11, 12, 25, 22, 64]
+
+i=2, min_index starts at 2 (arr[2]=25):
+  j=3: arr[3]=22 < arr[2]=25?  Yes -> min_index=3
+  j=4: arr[4]=64 < arr[3]=22?  No
+  Swap arr[2]=25 with arr[3]=22
+  Step 3: [11, 12, 22, 25, 64]
+
+i=3, min_index starts at 3 (arr[3]=25):
+  j=4: arr[4]=64 < arr[3]=25?  No
+  min_index stays at 3
+  Swap arr[3] with arr[3]: no change
+  Step 4: [11, 12, 22, 25, 64]
+
+i=4, min_index starts at 4 (arr[4]=64):
+  Inner loop: range(5, 5) is empty, no iterations
+  Swap arr[4] with arr[4]: no change
+  Step 5: [11, 12, 22, 25, 64]
+
+Sorted Array: [11, 12, 22, 25, 64]
+
+
+================================================================================
+PROBLEM 5: GREEDY SEARCH - MINIMUM SPANNING TREE (GENERIC)
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS A SPANNING TREE?
+
+A Spanning Tree of a graph is a subgraph that:
+  1. Contains ALL vertices of the original graph
+  2. Is connected (you can reach any vertex from any other vertex)
+  3. Has exactly V-1 edges (where V = number of vertices)
+  4. Has NO cycles (cycles are redundant for connectivity)
+
+Any tree with V vertices has exactly V-1 edges.
+A spanning tree "spans" (covers) all vertices of the graph.
+
+Why V-1 edges?
+  - To connect V vertices with no cycles, you need exactly V-1 edges
+  - Think of it: First vertex needs 0 edges to be connected (it's alone)
+  - Each new vertex you add needs exactly 1 edge to connect it to the tree
+  - Adding V-1 more vertices = V-1 more edges
+  - Total edges = V-1
+
+
+WHAT IS A MINIMUM SPANNING TREE (MST)?
+
+A Minimum Spanning Tree is the spanning tree with the MINIMUM total edge weight.
+
+Real-world application:
+  Suppose you want to connect 4 cities with telephone cables.
+  Each pair of cities has a cost to lay cable between them.
+  You want EVERY city to be reachable from every other city.
+  You want to minimize the TOTAL cost of cables laid.
+  The solution is the Minimum Spanning Tree!
+
+Example:
+
+  Cities: 0, 1, 2, 3
+  Available connections (edges) with costs:
+    0-1: 10
+    0-2:  6
+    0-3:  5
+    1-3: 15
+    2-3:  4
+
+  All possible spanning trees use exactly V-1 = 3 edges.
+  MST selects the 3 edges with minimum total weight
+  that still connect all vertices.
+
+  Sorted edges: 2-3(4), 0-3(5), 0-2(6), 0-1(10), 1-3(15)
+
+  Process:
+    Take 2-3 weight 4: Connect cities 2 and 3. No cycle. ADD.
+    Take 0-3 weight 5: Connect city 0 to group {2,3}. No cycle. ADD.
+    Take 0-2 weight 6: Connects 0 and 2. BUT they are already connected
+                       through 0-3-2. Would CREATE A CYCLE. SKIP.
+    Take 0-1 weight 10: Connect city 1 to group {0,2,3}. No cycle. ADD.
+                        Now all 4 cities connected!
+
+  MST edges: 2-3(4), 0-3(5), 0-1(10)
+  Total cost: 4 + 5 + 10 = 19
+
+
+WHAT IS THE UNION-FIND DATA STRUCTURE?
+
+Union-Find (also called Disjoint Set Union or DSU) is a data structure
+that efficiently tracks which vertices are in the same connected component.
+
+It supports two operations:
+  1. Find(x): Which component/group does vertex x belong to?
+              Returns a "representative" or "root" of the component.
+  2. Union(x, y): Merge the components containing x and y into one.
+
+Why do we need this for MST?
+  When we are adding edges, we need to detect if adding an edge would
+  create a cycle. A cycle occurs when both endpoints of an edge are
+  already in the SAME component (already connected).
+
+  Before adding edge (u, v):
+    Find root of u -> ru
+    Find root of v -> rv
+    If ru == rv: u and v are in same component, adding edge creates cycle!
+    If ru != rv: Different components, safe to add edge.
+
+
+HOW UNION-FIND WORKS (EXAMPLE)
+
+Initial state: 4 vertices, each in its own component.
+  parent = [0, 1, 2, 3]
+  (Each vertex is its own parent, meaning it's its own root)
+
+  Components: {0}, {1}, {2}, {3}
+
+Add edge 2-3 (weight 4):
+  find(2) = 2 (parent[2]=2, it's its own root)
+  find(3) = 3 (parent[3]=3, it's its own root)
+  2 != 3, different components -> SAFE TO ADD
+  Union: make 3's root (3) point to 2's root (2)
+  parent = [0, 1, 2, 2]
+  Components: {0}, {1}, {2, 3}
+
+Add edge 0-3 (weight 5):
+  find(0) = 0
+  find(3): parent[3]=2, parent[2]=2 -> find(3) = 2
+  0 != 2, different components -> SAFE TO ADD
+  Union: make 0's root (0) point to 2's root... or vice versa
+  parent = [2, 1, 2, 2]  (0's parent is now 2)
+  Components: {0, 2, 3}, {1}
+
+Add edge 0-2 (weight 6):
+  find(0): parent[0]=2, parent[2]=2 -> find(0) = 2
+  find(2) = 2
+  2 == 2, SAME component -> CYCLE! SKIP this edge.
+
+Add edge 0-1 (weight 10):
+  find(0) = 2 (traced above)
+  find(1) = 1
+  2 != 1, different components -> SAFE TO ADD
+  Union all together.
+
+Add edge 1-3 (weight 15):
+  Already have 3 edges for 4 vertices. MST is complete!
+
+
+PATH COMPRESSION OPTIMIZATION
+
+Without optimization, finding the root can take O(n) time
+if we have a long chain like: 5 -> 4 -> 3 -> 2 -> 1 -> 0
+
+Path Compression: After finding the root, make ALL nodes in the
+path point directly to the root. Future finds are O(1).
+
+Example:
+  Before: 5 -> 4 -> 3 -> 2 -> 1 -> 0 (root)
+  After find(5): All nodes now point directly to 0
+  5 -> 0, 4 -> 0, 3 -> 0, 2 -> 0, 1 -> 0
+
+
+UNION BY RANK OPTIMIZATION
+
+Rank = approximate height of the tree rooted at that vertex.
+
+When merging two trees, always attach the SMALLER tree (by rank)
+under the root of the LARGER tree.
+
+This prevents trees from becoming tall chains, keeping find() fast.
+
+  If rank[rx] < rank[ry]: attach rx under ry
+  If rank[rx] > rank[ry]: attach ry under rx
+  If rank[rx] == rank[ry]: attach either way, increase rank of new root
+
+
+GREEDY MST ALGORITHM (= KRUSKAL'S ALGORITHM)
+
+1. Sort all edges by weight in ascending order (greedy: cheapest first)
+2. Initialize Union-Find (each vertex in its own component)
+3. For each edge in sorted order:
+   a. Check if adding this edge creates a cycle (using Union-Find)
+   b. If NO cycle: Add to MST, merge the two components
+   c. If CYCLE: Skip this edge
+4. Stop when MST has V-1 edges (all vertices connected)
+
+The Greedy Choice: Always pick the cheapest available edge that doesn't
+create a cycle. This locally optimal choice leads to globally optimal MST.
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    def find(parent, i):
+        if parent[i] != i:
+            parent[i] = find(parent, parent[i])
+        return parent[i]
+
+Find with path compression:
+  Base case: if parent[i] == i, then i is its own root. Return i.
+  Recursive case: parent[i] is not i, so follow the parent link.
+    Find the actual root recursively.
+    THEN update parent[i] to point directly to root (path compression).
+    Return the root.
+
+
+    def union(parent, rank, x, y):
+        root_x = find(parent, x)
+        root_y = find(parent, y)
+
+First find the roots of both x and y's components.
+
+
+        if rank[root_x] < rank[root_y]:
+            parent[root_x] = root_y
+        elif rank[root_x] > rank[root_y]:
+            parent[root_y] = root_x
+        else:
+            parent[root_y] = root_x
+            rank[root_x] += 1
+
+Union by rank:
+  If root_x has smaller rank, attach it under root_y.
+    (smaller tree goes under bigger tree)
+  If root_x has larger rank, attach root_y under root_x.
+  If equal rank, attach root_y under root_x (arbitrary choice),
+    and increment root_x's rank since tree height increased.
+
+
+    def greedy_mst(vertices, edges):
+        edges.sort(key=lambda x: x[2])
+
+Sort all edges by their weight (third element of each edge tuple).
+lambda x: x[2] is an anonymous function that returns the third element.
+  Edge format: (u, v, weight)
+  x[0] = u (start vertex)
+  x[1] = v (end vertex)
+  x[2] = weight  <-- sort by this
+
+
+        parent = list(range(vertices))
+        rank = [0] * vertices
+
+  list(range(4)) = [0, 1, 2, 3]
+  Each vertex starts as its own parent (own component).
+
+  [0] * 4 = [0, 0, 0, 0]
+  All ranks start at 0 (single-node trees have height 0).
+
+
+        mst = []
+        total_cost = 0
+        for u, v, weight in edges:
+            if find(parent, u) != find(parent, v):
+                union(parent, rank, u, v)
+                mst.append((u, v, weight))
+                total_cost += weight
+
+For each edge (u, v, weight) in sorted order:
+  Unpack the tuple: u=start vertex, v=end vertex, weight=cost
+
+  find(parent, u) != find(parent, v):
+    Check if u and v are in DIFFERENT components (different roots).
+    Different roots = no cycle if we add this edge.
+
+  If no cycle:
+    union(parent, rank, u, v): Merge the two components
+    mst.append((u, v, weight)): Add this edge to our MST
+    total_cost += weight: Add weight to running total
+
+
+        return mst, total_cost
+
+Return the MST as a list of edges and the total cost.
+Caller can unpack: mst, cost = greedy_mst(vertices, edges)
+
+
+================================================================================
+PROBLEM 6: PRIM'S MST
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS PRIM'S ALGORITHM?
+
+Prim's Algorithm is another way to find the Minimum Spanning Tree.
+It grows the MST one vertex at a time, starting from a single vertex.
+
+Core Idea:
+  Maintain a set of vertices already in the MST (call it the "tree").
+  At each step, find the cheapest edge that connects a vertex IN the tree
+  to a vertex NOT yet in the tree.
+  Add that edge and the new vertex to the tree.
+  Repeat until all vertices are in the tree.
+
+This is a GREEDY algorithm: At each step, greedily pick the cheapest
+edge that expands the tree to a new vertex.
+
+
+PRIM'S VS KRUSKAL'S COMPARISON
+
+Both find the MST with same total cost, but different approach:
+
+Kruskal's:
+  - Considers ALL edges globally
+  - Sorts all edges upfront
+  - Picks cheapest edge that doesn't create cycle anywhere in graph
+  - Can build multiple disconnected tree fragments simultaneously
+  - Better for sparse graphs (few edges relative to vertices)
+
+Prim's:
+  - Grows a SINGLE connected tree from a starting vertex
+  - At each step, picks cheapest edge connecting tree to new vertex
+  - Tree is always connected during construction
+  - Better for dense graphs (many edges relative to vertices)
+  - Commonly implemented with a priority queue for efficiency
+
+
+PRIM'S ALGORITHM STEP-BY-STEP
+
+Graph (adjacency list):
+  0: [(1,2), (3,6)]      vertex 0 connects to 1 (weight 2) and 3 (weight 6)
+  1: [(0,2), (2,3), (3,8), (4,5)]
+  2: [(1,3), (4,7)]
+  3: [(0,6), (1,8), (4,9)]
+  4: [(1,5), (2,7), (3,9)]
+
+Visually:
+  0 --2-- 1 --3-- 2
+  |       |       |
+  6       5       7
+  |       |       |
+  3 --9-- 4 ------+
+          |
+          8 (edge 1-3)
+
+Start from vertex 0:
+
+Step 0:
+  Tree = {0}
+  Min-heap: [(0, 0, -1)]   (weight, vertex, parent)
+  Pop (0, 0, -1): Visit vertex 0, parent=-1 (start)
+  total_cost = 0
+  Neighbors of 0: (1,weight=2), (3,weight=6)
+  Push (2, 1, 0) and (6, 3, 0) to heap
+  Heap: [(2,1,0), (6,3,0)]
+
+Step 1:
+  Pop (2, 1, 0): Cheapest edge is 0->1 with weight 2
+  Vertex 1 not yet visited -> ADD to MST
+  mst = [(0, 1, 2)], total_cost = 2
+  Tree = {0, 1}
+  Neighbors of 1: (0,2) already visited, (2,3), (3,8), (4,5)
+  Push (3,2,1), (8,3,1), (5,4,1) to heap
+  Heap: [(3,2,1), (5,4,1), (6,3,0), (8,3,1)]
+
+Step 2:
+  Pop (3, 2, 1): Cheapest is 1->2 with weight 3
+  Vertex 2 not yet visited -> ADD to MST
+  mst = [(0,1,2), (1,2,3)], total_cost = 5
+  Tree = {0, 1, 2}
+  Neighbors of 2: (1,3) already visited, (4,7)
+  Push (7,4,2)
+  Heap: [(5,4,1), (6,3,0), (7,4,2), (8,3,1)]
+
+Step 3:
+  Pop (5, 4, 1): Cheapest is 1->4 with weight 5
+  Vertex 4 not yet visited -> ADD to MST
+  mst = [(0,1,2), (1,2,3), (1,4,5)], total_cost = 10
+  Tree = {0, 1, 2, 4}
+  Neighbors of 4: (1,5) visited, (2,7) visited, (3,9)
+  Push (9,3,4)
+  Heap: [(6,3,0), (7,4,2), (8,3,1), (9,3,4)]
+
+Step 4:
+  Pop (6, 3, 0): Cheapest is 0->3 with weight 6
+  Vertex 3 not yet visited -> ADD to MST
+  mst = [(0,1,2), (1,2,3), (1,4,5), (0,3,6)], total_cost = 16
+  Tree = {0, 1, 2, 3, 4}  <- All vertices! Done!
+
+MST Edges: (0,1) weight 2, (1,2) weight 3, (1,4) weight 5, (0,3) weight 6
+Total Cost: 16
+
+
+WHY CHECK IF ALREADY VISITED IN THE HEAP?
+
+A vertex might be added to the heap multiple times:
+  - Once from each neighboring tree vertex that discovers it
+  - When we pop it the second time, it's already in the tree
+
+Example: Vertex 4 might be pushed by both vertex 1 and vertex 2.
+  When we pop vertex 4 the first time (lowest weight = 5 from vertex 1):
+    -> Not visited, add to tree
+  When we pop vertex 4 the second time (weight = 7 from vertex 2):
+    -> Already visited! Skip this stale entry.
+
+This is handled by: if visited[u]: continue
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    import heapq
+
+Import Python's heap module for the priority queue.
+
+
+    def prims_mst(graph, start=0):
+        num_vertices = len(graph)
+        visited = [False] * num_vertices
+        min_heap = [(0, start, -1)]
+        mst = []
+        total_cost = 0
+
+  num_vertices: Total number of vertices (length of adjacency list dict)
+  visited: Boolean array. visited[i]=True means vertex i is in the MST.
+           [False] * n creates a list of n False values.
+  min_heap: Priority queue initialized with (weight=0, start_vertex, parent=-1)
+            weight=0 because there's no actual edge to the start vertex
+            parent=-1 is a sentinel meaning "no parent" (it's the root)
+  mst: Empty list to store MST edges as (parent, vertex, weight) tuples
+  total_cost: Running sum of MST edge weights
+
+
+    while min_heap:
+        weight, u, parent = heapq.heappop(min_heap)
+        if visited[u]:
+            continue
+
+Loop while heap is not empty.
+Pop the entry with minimum weight: (weight, vertex, parent_vertex)
+If vertex u is already visited (already in MST), skip this entry.
+This handles the case where a vertex appears multiple times in the heap.
+
+
+        visited[u] = True
+        total_cost += weight
+        if parent != -1:
+            mst.append((parent, u, weight))
+
+Mark u as visited (now officially part of MST).
+Add its edge weight to total cost.
+If u is not the start vertex (parent != -1), record this edge in MST.
+  (Start vertex has parent=-1 and weight=0, no actual edge to record)
+
+
+        for v, w in graph[u]:
+            if not visited[v]:
+                heapq.heappush(min_heap, (w, v, u))
+
+Explore all neighbors of newly added vertex u.
+  graph[u] gives list of (neighbor, weight) tuples.
+  For each unvisited neighbor v with edge weight w:
+    Push (w, v, u) to heap: "vertex v is reachable from u with weight w"
+  The heap will automatically sort by weight (first element of tuple).
+  So the cheapest available edge will be processed next.
+
+
+    return mst, total_cost
+
+Return the MST edge list and total cost.
+
+
+================================================================================
+PROBLEM 7: KRUSKAL'S MST
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS KRUSKAL'S ALGORITHM?
+
+Kruskal's Algorithm finds the MST by:
+  1. Sorting ALL edges by weight (ascending)
+  2. Going through edges from cheapest to most expensive
+  3. Adding each edge to MST if it does NOT create a cycle
+  4. Skipping any edge that would create a cycle
+  5. Stopping when MST has V-1 edges (or all edges processed)
+
+The Greedy Choice: Always add the globally cheapest available edge
+that doesn't create a cycle.
+
+This greedy strategy is provably optimal for finding MST.
+
+
+KRUSKAL'S DETAILED WALKTHROUGH
+
+Edges sorted by weight:
+  2-3: 4
+  0-3: 5
+  0-2: 6
+  0-1: 10
+  1-3: 15
+
+Union-Find initial: parent=[0,1,2,3], rank=[0,0,0,0]
+Components: {0},{1},{2},{3}
+
+Edge 2-3 weight 4:
+  find(2)=2, find(3)=3  -> Different! Add to MST
+  union(2,3): parent=[0,1,2,2], rank=[0,0,1,0]  (3 goes under 2)
+  MST=[{2,3,4}], cost=4, Components: {0},{1},{2,3}
+
+Edge 0-3 weight 5:
+  find(0)=0, find(3)=2  -> Different! Add to MST
+  union(0,3): Merge {0} and {2,3}. rank[0]=0 < rank[2]=1, so 0 goes under 2
+  parent=[2,1,2,2], rank=[0,0,1,0]
+  MST=[{2,3,4},{0,3,5}], cost=9, Components: {0,2,3},{1}
+
+Edge 0-2 weight 6:
+  find(0)=2, find(2)=2  -> SAME! Skip (would create cycle)
+
+Edge 0-1 weight 10:
+  find(0)=2, find(1)=1  -> Different! Add to MST
+  union(0,1): Merge {0,2,3} and {1}. rank[2]=1 > rank[1]=0, so 1 goes under 2
+  parent=[2,2,2,2], rank=[0,0,1,0]
+  MST=[{2,3,4},{0,3,5},{0,1,10}], cost=19
+  len(mst) = 3 = V-1 = 4-1 = 3  -> DONE!
+
+Final MST total cost: 19
+
+
+OBJECT-ORIENTED UNION-FIND
+
+This problem uses a class-based Union-Find (cleaner than Problem 5).
+The logic is identical but encapsulated in a class.
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    class UnionFind:
+        def __init__(self, n):
+            self.parent = list(range(n))
+            self.rank = [0] * n
+
+Creates Union-Find for n vertices.
+self.parent: Each vertex is its own parent (own component).
+self.rank:   All ranks start at 0.
+
+
+        def find(self, x):
+            if self.parent[x] != x:
+                self.parent[x] = self.find(self.parent[x])
+            return self.parent[x]
+
+Path-compressed find. Same logic as Problem 5 but using self.parent.
+If x is not its own parent, recursively find root and compress path.
+
+
+        def union(self, x, y):
+            rx, ry = self.find(x), self.find(y)
+            if rx == ry:
+                return False
+
+Find roots of both components.
+If they have the SAME root, they are in the same component.
+Return False: merging would create a cycle.
+
+
+            if self.rank[rx] < self.rank[ry]:
+                self.parent[rx] = ry
+            elif self.rank[rx] > self.rank[ry]:
+                self.parent[ry] = rx
+            else:
+                self.parent[ry] = rx
+                self.rank[rx] += 1
+            return True
+
+Union by rank: attach smaller-rank tree under larger-rank tree's root.
+Return True: merge was successful, no cycle.
+
+
+    def kruskals_mst(num_vertices, edges):
+        edges.sort(key=lambda x: x[2])
+        uf = UnionFind(num_vertices)
+        mst = []
+        total_cost = 0
+        for u, v, weight in edges:
+            if uf.union(u, v):
+                mst.append((u, v, weight))
+                total_cost += weight
+                if len(mst) == num_vertices - 1:
+                    break
+        return mst, total_cost
+
+Sort edges by weight.
+Create UnionFind instance for num_vertices vertices.
+
+For each edge in sorted order:
+  uf.union(u, v) attempts to merge the components of u and v.
+  Returns True if successful (no cycle), False if same component (cycle).
+  If True (no cycle):
+    Add edge to MST, add weight to total.
+    If MST now has V-1 edges, we are done (break early).
+
+Return MST edges and total cost.
+
+The early break (when len(mst) == num_vertices-1) is an optimization:
+Once we have connected all V vertices with V-1 edges, MST is complete.
+No need to examine remaining edges.
+
+
+================================================================================
+PROBLEM 8: DIJKSTRA'S ALGORITHM
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS DIJKSTRA'S ALGORITHM?
+
+Dijkstra's Algorithm (pronounced "DYKE-struh") finds the SHORTEST PATH
+from one source vertex to ALL other vertices in a weighted graph.
+
+Key Points:
+  - Works on weighted graphs (edges have costs/distances)
+  - Works only with NON-NEGATIVE edge weights (no negative numbers)
+  - Gives shortest distance from source to every other vertex
+  - Uses a greedy approach with a priority queue
+
+
+WHY NOT USE BFS FOR WEIGHTED GRAPHS?
+
+BFS finds shortest path in terms of NUMBER OF EDGES (fewest hops).
+But in weighted graphs, fewer edges does NOT mean shorter path.
+
+Example:
+  A --1-- B --1-- C    (A to C via B: 2 hops, cost = 1+1 = 2)
+  |                |
+  +------10--------+   (A to C direct: 1 hop, cost = 10)
+
+BFS would say: A->B->C is shortest (2 hops = less than 1 direct hop...)
+Wait, 2 hops > 1 hop. BFS gives A->C directly as shortest (1 hop).
+But COST-wise, A->B->C (cost 2) is cheaper than A->C (cost 10).
+
+So BFS (counting hops) gives different answer than Dijkstra (counting cost).
+For road navigation with distances/times, Dijkstra is correct.
+
+
+DIJKSTRA'S ALGORITHM STEP-BY-STEP
+
+Graph:
+  A: [(B,1), (C,4)]
+  B: [(A,1), (C,2), (D,5)]
+  C: [(A,4), (B,2), (D,1)]
+  D: [(B,5), (C,1)]
+
+Visually:
+  A --(1)-- B
+  |        / \
+  (4)    (2)  (5)
+  |      /      \
+  C -----       D
+  |    (1)       |
+  +-----(1)-----+
+
+Start from A:
+Initial:
+  dist = {A:0, B:inf, C:inf, D:inf}
+  prev = {A:None, B:None, C:None, D:None}
+  heap = [(0, A)]
+
+Iteration 1: Pop (0, A)
+  cost=0 equals dist[A]=0, process it.
+  Neighbors of A: (B, weight=1), (C, weight=4)
+  B: new_cost = 0+1=1 < dist[B]=inf  -> Update dist[B]=1, prev[B]=A, push (1,B)
+  C: new_cost = 0+4=4 < dist[C]=inf  -> Update dist[C]=4, prev[C]=A, push (4,C)
+  heap = [(1,B), (4,C)]
+  dist = {A:0, B:1, C:4, D:inf}
+
+Iteration 2: Pop (1, B)
+  cost=1 equals dist[B]=1, process it.
+  Neighbors of B: (A,1), (C,2), (D,5)
+  A: new_cost = 1+1=2 > dist[A]=0  -> No update (we already found shorter path to A)
+  C: new_cost = 1+2=3 < dist[C]=4  -> Update dist[C]=3, prev[C]=B, push (3,C)
+  D: new_cost = 1+5=6 < dist[D]=inf  -> Update dist[D]=6, prev[D]=B, push (6,D)
+  heap = [(3,C), (4,C), (6,D)]
+  dist = {A:0, B:1, C:3, D:6}
+
+Iteration 3: Pop (3, C)
+  cost=3 equals dist[C]=3, process it.
+  Neighbors of C: (A,4), (B,2), (D,1)
+  A: 3+4=7 > 0  -> No update
+  B: 3+2=5 > 1  -> No update
+  D: 3+1=4 < dist[D]=6  -> Update dist[D]=4, prev[D]=C, push (4,D)
+  heap = [(4,C), (4,D), (6,D)]
+  dist = {A:0, B:1, C:3, D:4}
+
+Iteration 4: Pop (4, C)
+  cost=4 > dist[C]=3  -> Stale entry! Skip (continue)
+
+Iteration 5: Pop (4, D)
+  cost=4 equals dist[D]=4, process it.
+  Neighbors of D: (B,5), (C,1)
+  B: 4+5=9 > 1  -> No update
+  C: 4+1=5 > 3  -> No update
+  heap = [(6,D)]
+
+Iteration 6: Pop (6, D)
+  cost=6 > dist[D]=4  -> Stale entry! Skip
+
+Heap empty. Done!
+
+Final shortest distances from A:
+  A: 0   (path: A)
+  B: 1   (path: A -> B)
+  C: 3   (path: A -> B -> C)
+  D: 4   (path: A -> B -> C -> D)
+
+
+THE RELAXATION CONCEPT
+
+"Relaxing" an edge (u, v) means:
+  If dist[u] + weight(u,v) < dist[v]:
+    Update dist[v] = dist[u] + weight(u,v)
+    (We found a shorter path to v through u)
+
+This is like "loosening" or "relaxing" our estimate of the distance to v.
+Initially all distances are infinite (very tight upper bound).
+Each relaxation makes the estimate more accurate (smaller = relaxed).
+
+
+WHY DOES THE STALE ENTRY CHECK WORK?
+
+When we update a vertex's distance, we push a new entry to the heap.
+The old entry (with higher distance) remains in the heap.
+
+When we later pop the old entry:
+  cost > dist[u] means this entry's cost is outdated
+  We've already processed u with a better (smaller) distance
+  We can safely ignore (skip) this stale entry
+
+This is called the "lazy deletion" approach for priority queues.
+
+
+PATH RECONSTRUCTION
+
+The prev dictionary records how we arrived at each vertex:
+  prev[B] = A   (we set shortest dist[B] while processing A)
+  prev[C] = B   (we set shortest dist[C] while processing B)
+  prev[D] = C   (we set shortest dist[D] while processing C)
+  prev[A] = None (no predecessor for start)
+
+To reconstruct path from A to D:
+  Start at D
+  prev[D] = C, so go to C
+  prev[C] = B, so go to B
+  prev[B] = A, so go to A
+  prev[A] = None, stop
+
+Path collected: [D, C, B, A]
+Reversed: [A, B, C, D]  <- Correct shortest path!
+
+
+TIME AND SPACE COMPLEXITY
+
+Time:
+  O(E log V) with a binary heap (heapq)
+  E = edges (each edge may be pushed to heap once)
+  log V = time for each heap push/pop operation
+
+Space:
+  O(V) for dist, prev, and heap in worst case
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    import heapq
+
+Import heap module for priority queue.
+
+
+    def dijkstra(graph, start):
+        dist = {node: float('inf') for node in graph}
+        dist[start] = 0
+        prev = {node: None for node in graph}
+        heap = [(0, start)]
+
+  dist = {node: float('inf') for node in graph}:
+    Dictionary comprehension: creates {A:inf, B:inf, C:inf, D:inf}
+    float('inf') is Python's positive infinity. Any real number < infinity.
+    We initialize all distances as unknown (infinite).
+
+  dist[start] = 0:
+    Distance from start to itself is 0 (no travel needed).
+
+  prev = {node: None for node in graph}:
+    Dictionary comprehension: {A:None, B:None, C:None, D:None}
+    None means "no predecessor yet known".
+
+  heap = [(0, start)]:
+    Priority queue with just the start node.
+    Tuple (cost, node): cost=0, node=start vertex.
+
+
+    while heap:
+        cost, u = heapq.heappop(heap)
+        if cost > dist[u]:
+            continue
+
+Pop minimum cost entry.
+cost > dist[u]: This is a stale entry.
+  We already found a shorter path to u.
+  Skip this entry and move on.
+
+
+        for v, weight in graph[u]:
+            new_cost = dist[u] + weight
+            if new_cost < dist[v]:
+                dist[v] = new_cost
+                prev[v] = u
+                heapq.heappush(heap, (new_cost, v))
+
+Relaxation: For each neighbor v with edge weight:
+  new_cost = current shortest distance to u + edge weight to v
+  If this new path is shorter than what we knew for v:
+    Update dist[v] to the new shorter distance
+    Update prev[v] = u (we got to v via u)
+    Push new entry to heap for future processing
+
+
+    return dist, prev
+
+Return both the distance dictionary and predecessor dictionary.
+
+
+    def get_path(prev, end):
+        path = []
+        current = end
+        while current is not None:
+            path.append(current)
+            current = prev[current]
+        return path[::-1]
+
+Trace back path from end to start using prev links.
+current starts at the end vertex.
+Follow prev[current] until we reach None (the start vertex).
+path[::-1] reverses the collected path (it was collected backwards).
+
+
+================================================================================
+PROBLEM 9: N-QUEENS (BACKTRACKING & BRANCH AND BOUND)
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS THE N-QUEENS PROBLEM?
+
+Place N chess queens on an N x N chessboard so that:
+  NO two queens can attack each other.
+
+A queen in chess can attack:
+  - Any square in the same ROW (horizontally)
+  - Any square in the same COLUMN (vertically)
+  - Any square on the same DIAGONAL (both directions)
+
+For N=4 (4 queens on 4x4 board), valid solutions:
+
+  Solution 1:       Solution 2:
+  . Q . .           . . Q .
+  . . . Q           Q . . .
+  Q . . .           . . . Q
+  . . Q .           . Q . .
+
+  Q = Queen   . = Empty
+
+For N=8, there are 92 distinct solutions.
+
+
+WHAT IS BACKTRACKING?
+
+Backtracking is a systematic algorithm for solving problems by:
+  1. Building a solution incrementally, one piece at a time
+  2. Testing if the current partial solution can possibly lead to a valid solution
+  3. If yes, continue building
+  4. If no (dead end), BACKTRACK: undo the last decision and try a different option
+  5. Repeat until a solution is found or all options exhausted
+
+Think of it like solving a maze:
+  - Walk forward
+  - Hit a wall (dead end) -> Turn around (backtrack)
+  - Try a different direction at the last junction
+  - Repeat until you find the exit or prove there is no exit
+
+
+BACKTRACKING VS BRUTE FORCE
+
+Brute Force for N-Queens:
+  Try ALL possible arrangements of N queens on N^2 squares.
+  For N=8: C(64, 8) = 4,426,165,368 arrangements to check!
+
+Backtracking:
+  Prune (cut off) branches that cannot possibly lead to a solution.
+  For N=8: Only explores ~15,720 states. Millions of times faster!
+
+
+WHAT IS BRANCH AND BOUND?
+
+Branch and Bound extends backtracking:
+  - Branch: Divide the problem into subproblems (try each queen position)
+  - Bound:  Calculate a "bound" (limit). If even the BEST possible outcome
+            from a branch cannot be better than current best, PRUNE that branch.
+
+In N-Queens, bounding means:
+  Before placing a queen in a position, CHECK if it's under attack.
+  If it IS under attack, don't even try (prune that branch).
+  This is implicit bounding: we bound away any position under attack.
+
+
+KEY INSIGHT: ONE QUEEN PER ROW
+
+Since queens attack horizontally (same row), no two queens can share a row.
+Therefore, there must be EXACTLY ONE queen per row.
+
+This means we can solve the problem row by row:
+  Row 0: Place a queen somewhere in row 0
+  Row 1: Place a queen somewhere in row 1 (not in attacked column/diagonal)
+  Row 2: Place a queen somewhere in row 2 (not in attacked column/diagonal)
+  ...
+  Row N-1: If we successfully place all N queens, we found a solution!
+
+This reduces the search space dramatically:
+  Instead of placing N queens anywhere on N^2 board,
+  we just choose WHICH COLUMN for each row.
+  N choices per row x N rows = N^N possibilities (still a lot!)
+  With backtracking, we prune branches early and do much less work.
+
+
+DETECTING CONFLICTS EFFICIENTLY
+
+For each potential queen position (row, col), we need to check:
+  1. Is there already a queen in this column?
+  2. Is there already a queen on this main diagonal (\)?
+  3. Is there already a queen on this anti-diagonal (/)?
+
+NAIVE APPROACH: Check against every previously placed queen.
+  O(N) per check -> too slow.
+
+SMART APPROACH: Use three sets for O(1) checks.
+
+Set 1: cols
+  Stores the column number of each queen already placed.
+  If col is in cols, that column is under attack.
+
+Set 2: diag1 (main diagonals \)
+  Squares on the SAME main diagonal have the same (row - col) value.
+  Proof:
+    Square (0,0): 0-0 = 0
+    Square (1,1): 1-1 = 0
+    Square (2,2): 2-2 = 0
+    -> All on same diagonal!
+    Square (0,2): 0-2 = -2
+    Square (1,3): 1-3 = -2
+    -> Also on same diagonal!
+  So if (row-col) is in diag1, that diagonal is under attack.
+
+Set 3: diag2 (anti-diagonals /)
+  Squares on the SAME anti-diagonal have the same (row + col) value.
+  Proof:
+    Square (0,3): 0+3 = 3
+    Square (1,2): 1+2 = 3
+    Square (2,1): 2+1 = 3
+    -> All on same anti-diagonal!
+  So if (row+col) is in diag2, that anti-diagonal is under attack.
+
+With these three sets, each conflict check is O(1).
+Total complexity: O(N!) in worst case (much better in practice with pruning).
+
+
+THE BACKTRACKING PROCESS ILLUSTRATED (N=4)
+
+We try to place queens row by row, column by column.
+Q = placed queen, X = blocked square, ? = trying this position
+
+Row 0: Try col 0 -> Place queen at (0,0)
+         Q . . .
+         X . X .   (col 0 and diagonals blocked)
+         X . . X
+         X . . .
+
+Row 1: Try col 0 -> Same column! SKIP
+       Try col 1 -> Diagonal from (0,0)! SKIP
+       Try col 2 -> Place queen at (1,2)
+         Q . . .
+         . . Q .
+         . X . X   (col 2 and diagonals blocked)
+         X . . .
+
+Row 2: Try col 0 -> Diagonal from (1,2)! SKIP
+       Try col 1 -> Diagonal from (0,0)? Let's check...
+                    diag1: row-col = 2-1 = 1. Not in diag1 (which has 0, -1)
+                    diag2: row+col = 2+1 = 3. Not in diag2 (which has 0, 3)
+                    Wait, (0,0): diag2 = 0+0 = 0. (1,2): diag2 = 1+2 = 3.
+                    (2,1): diag2 = 2+1 = 3. Same as (1,2)! DIAGONAL ATTACK! SKIP
+       Try col 2 -> Same column as row 1 queen! SKIP
+       Try col 3 -> Check: col 3 in cols? No. diag1 (row-col=2-3=-1) in diag1? No.
+                    diag2 (row+col=2+3=5) in diag2? No. But wait, check (0,0): 
+                    diag1=0-0=0, (1,2): diag1=1-2=-1. Is 2-3=-1 in diag1? YES!
+                    (1,2) has diag1 = -1. DIAGONAL ATTACK! SKIP
+       No valid position in row 2! BACKTRACK to row 1.
+
+Row 1 again: Remove queen from col 2. Try col 3.
+       Place queen at (1,3).
+
+... (continue exploring all possibilities)
+
+
+N-QUEENS SOLUTION COUNTS
+
+N=1:  1 solution
+N=2:  0 solutions
+N=3:  0 solutions
+N=4:  2 solutions
+N=5:  10 solutions
+N=6:  4 solutions
+N=7:  40 solutions
+N=8:  92 solutions   <- The code uses N=8
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    class NQueens:
+        def __init__(self, n):
+            self.n = n
+            self.solutions = []
+            self.cols = set()
+            self.diag1 = set()
+            self.diag2 = set()
+
+  self.n: Board size (N x N board with N queens)
+  self.solutions: List to store all valid complete solutions found
+  self.cols: Set of column indices currently occupied by queens
+  self.diag1: Set of (row-col) values for occupied main diagonals
+  self.diag2: Set of (row+col) values for occupied anti-diagonals
+
+
+    def solve(self, row=0, board=None):
+        if board is None:
+            board = []
+        if row == self.n:
+            self.solutions.append(board[:])
+            return
+
+  Parameters:
+    row: Current row we are trying to place a queen in (starts at 0)
+    board: List where board[i] = column of queen in row i
+
+  if board is None: board = []
+    Safe initialization (same pattern as DFS visited set).
+
+  if row == self.n:
+    We have successfully placed queens in ALL N rows!
+    This is a complete valid solution.
+    board[:] creates a COPY of the board list.
+    We must copy because board is modified (appended/popped) during recursion.
+    Without copying, all solutions would reference the same list.
+    self.solutions.append(board[:]) saves this solution.
+    return ends this recursive call.
+
+
+        for col in range(self.n):
+            if col in self.cols or (row - col) in self.diag1 or (row + col) in self.diag2:
+                continue
+
+Try each column (0 to N-1) for the current row.
+
+Conflict check (this is the BOUNDING step):
+  col in self.cols:         Column already has a queen -> conflict
+  (row-col) in self.diag1: Main diagonal already has a queen -> conflict
+  (row+col) in self.diag2: Anti-diagonal already has a queen -> conflict
+
+  If any conflict: skip this column (continue to next column).
+  This PRUNES the search tree, avoiding exploration of invalid subtrees.
+
+
+            self.cols.add(col)
+            self.diag1.add(row - col)
+            self.diag2.add(row + col)
+            board.append(col)
+            self.solve(row + 1, board)
+
+Place queen at position (row, col):
+  self.cols.add(col): Mark this column as occupied
+  self.diag1.add(row - col): Mark this main diagonal as occupied
+  self.diag2.add(row + col): Mark this anti-diagonal as occupied
+  board.append(col): Record the queen's column in this row
+
+self.solve(row + 1, board):
+  BRANCH: Recursively try to place a queen in the next row.
+  This explores the entire subtree rooted at current placement.
+
+
+            board.pop()
+            self.cols.remove(col)
+            self.diag1.remove(row - col)
+            self.diag2.remove(row + col)
+
+BACKTRACK: After the recursive call returns (either found solution or dead end),
+undo the placement of the queen:
+  board.pop(): Remove the last element (queen in this row)
+  self.cols.remove(col): Unmark this column
+  self.diag1.remove(row-col): Unmark this diagonal
+  self.diag2.remove(row+col): Unmark this anti-diagonal
+
+Now we can try the NEXT column in this row.
+This is the essence of backtracking: try, recurse, undo, try next.
+
+
+    def print_board(self, solution):
+        for r in range(self.n):
+            print(" ".join("Q" if solution[r] == c else "." for c in range(self.n)))
+        print()
+
+For each row r:
+  For each column c in this row:
+    If solution[r] == c: There's a queen here, use "Q"
+    Otherwise: Empty square, use "."
+  " ".join(...): Join all characters for this row with spaces
+  Print the complete row
+
+print(): Empty line between boards for readability.
+
+
+    n = 8
+    solver = NQueens(n)
+    solver.solve()
+
+Create solver for 8-Queens problem and find all solutions.
+After solve() returns, solver.solutions contains all 92 solutions.
+
+
+================================================================================
+PROBLEM 10: ELEMENTARY CUSTOMER SUPPORT CHATBOT
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS A CHATBOT?
+
+A chatbot is a computer program designed to simulate human conversation.
+It accepts text input from a user and responds with relevant text output.
+
+Types of Chatbots:
+
+1. Rule-Based Chatbots (this code):
+   - Use predefined patterns and rules to match user input
+   - Respond with pre-written responses
+   - Simple to build and understand
+   - Limited to scenarios the programmer anticipated
+   - Cannot learn or improve automatically
+   - Examples: FAQ bots, basic customer service bots
+
+2. AI/ML Chatbots:
+   - Use machine learning models trained on large datasets
+   - Can understand context, handle varied phrasing
+   - Can generate novel responses
+   - Examples: ChatGPT, Siri, Alexa
+
+
+REGULAR EXPRESSIONS (REGEX) BASICS
+
+Regular Expressions are patterns used to find/match text.
+
+Common regex patterns used in this code:
+
+  Pattern: r"hello|hi|hey"
+    | = OR operator (match any of these words)
+    Matches: "hello", "hi", "hey" anywhere in text
+
+  Pattern: r"order|track|tracking"
+    Matches: text containing "order" OR "track" OR "tracking"
+
+  Pattern: r"bye|goodbye|exit|quit"
+    Matches: any of these four words
+
+  re.search(pattern, text):
+    Searches anywhere in the text for the pattern
+    Returns a Match object (truthy) if found
+    Returns None (falsy) if not found
+
+  re.search(r"hello", "hi hello there"):
+    Would return a Match object (found "hello" in the string)
+
+  re.search(r"hello", "hi there"):
+    Would return None (no "hello" found)
+
+Why use | (OR) in patterns?
+  One pattern can match multiple related words.
+  r"order|track|tracking" covers all order-related queries in one pattern.
+
+
+RANDOM RESPONSES FOR NATURAL FEEL
+
+Using random.choice(responses) adds variety to the bot's responses.
+Instead of always giving the exact same reply, the bot randomly picks
+one from a list of possible responses. This makes it feel less robotic.
+
+
+LAMBDA FUNCTIONS
+
+A lambda is a small anonymous (unnamed) function defined inline.
+
+Example from code:
+  lambda: f"Our support is available Mon-Fri, 9AM-6PM. Current time: {datetime.now().strftime('%H:%M')}"
+
+This lambda:
+  - Takes no parameters
+  - Returns a formatted string with current time embedded
+  - Is stored in the responses list alongside regular strings
+
+We call it with resp() if callable(resp) else resp:
+  callable(resp): Returns True if resp is a function (lambda), False if it's a string
+  If callable: call it with resp() to execute and get the string
+  If not callable: use it directly as a string
+
+Why lambda instead of just a string?
+  "Current time: 9:30" would be fixed at chatbot creation time.
+  The lambda computes the time each time it is called.
+  So the bot always shows the CURRENT time, not the startup time.
+
+
+CHATBOT CONVERSATION FLOW
+
+User Input
+  |
+  v
+Convert to lowercase and strip whitespace
+  |
+  v
+Try each regex pattern in self.responses dictionary
+  |
+  +---> Pattern matches? --> Pick random response from list --> Print it
+  |                          If response is callable (lambda), call it first
+  |
+  +---> No pattern matched? --> Pick random default response --> Print it
+  |
+  v
+Check if user said "bye/goodbye/exit/quit"
+  If yes: Break loop, end conversation
+  If no: Continue, get next input
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    import re
+    import random
+    from datetime import datetime
+
+  re: Regular expression module for pattern matching
+  random: For random.choice() to pick varied responses
+  datetime: For getting current time in the hours response
+
+
+    class CustomerChatbot:
+        def __init__(self):
+            self.name = "ServiceBot"
+            self.responses = {
+                r"hello|hi|hey": [
+                    "Hello! Welcome to our support center...",
+                    "Hi there! How may I assist you?",
+                ],
+                ...
+            }
+
+  self.name: The bot's display name
+  self.responses: Dictionary mapping patterns to response lists
+    Key: regex pattern string (r"..." prefix makes it a raw string)
+         In raw strings, backslashes are treated literally.
+         Important for complex regex patterns.
+    Value: List of possible response strings (or callables)
+
+  Multiple responses per pattern = variety in bot's replies.
+
+
+    self.default_responses = [
+        "I'm sorry, I didn't quite understand that...",
+        "I'm not sure about that. Would you like me to connect you...",
+        "That's outside my knowledge. Please call our helpline...",
+    ]
+
+When no pattern matches, randomly pick one of these generic responses.
+This prevents the bot from crashing or giving no response.
+
+
+    def get_response(self, user_input):
+        user_input = user_input.lower().strip()
+
+Normalize the input:
+  .lower(): Convert "HELLO" or "Hello" to "hello" for case-insensitive matching
+  .strip(): Remove leading/trailing whitespace "  hello  " -> "hello"
+
+
+        for pattern, responses in self.responses.items():
+            if re.search(pattern, user_input):
+                resp = random.choice(responses)
+                return resp() if callable(resp) else resp
+
+Iterate through ALL patterns in the responses dictionary.
+  .items() gives (key, value) pairs = (pattern, responses_list)
+
+  re.search(pattern, user_input):
+    Try to find the pattern anywhere in the user's message.
+    Returns truthy match if found.
+
+  If pattern matches:
+    random.choice(responses): Pick a random response from the list
+    callable(resp): Check if it's a function (lambda) or string
+    If callable: resp() calls the function to get the string
+    If not callable: use resp directly as the string
+    return immediately (first matching pattern wins)
+
+
+        return random.choice(self.default_responses)
+
+If NO pattern matched at all, return a random default response.
+
+
+    def chat(self):
+        print(f"\n{'='*50}")
+        print(f"  Welcome to {self.name} - Customer Support")
+        print(f"{'='*50}")
+        print("Type 'bye' to exit.\n")
+        print(f"{self.name}: Hello! How can I assist you today?")
+
+Print welcome banner.
+f-string with {'='*50} creates a line of 50 equals signs.
+This is evaluated inside the f-string.
+
+
+        while True:
+            user_input = input("You: ").strip()
+            if not user_input:
+                continue
+
+  while True: Infinite loop - keeps chatting until explicitly stopped
+  input("You: "): Display "You: " prompt and wait for user to type
+  .strip(): Remove leading/trailing whitespace
+  if not user_input: continue
+    If user just pressed Enter (empty input), go back to top of loop
+    Don't process empty inputs
+
+
+            response = self.get_response(user_input)
+            print(f"{self.name}: {response}")
+
+Get appropriate response and print it.
+
+
+            if re.search(r"bye|goodbye|exit|quit", user_input.lower()):
+                break
+
+After responding, check if user wants to end the conversation.
+If they said bye/goodbye/exit/quit, break out of the while loop.
+The chatbot already responded with a farewell message via get_response().
+This just stops the loop.
+
+
+    bot = CustomerChatbot()
+    bot.chat()
+
+Create the chatbot instance and start the conversation loop.
+
+
+================================================================================
+PROBLEM 11: AMAZON EC2 - LAUNCH A VIRTUAL MACHINE INSTANCE
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS CLOUD COMPUTING?
+
+Cloud Computing means accessing computing resources (servers, storage,
+databases, networking, software) over the internet, provided and managed
+by a cloud provider, instead of owning and maintaining physical hardware.
+
+Benefits of Cloud Computing:
+  - Pay only for what you use (like electricity: pay per unit used)
+  - Scale resources up or down instantly based on demand
+  - No upfront hardware purchase cost
+  - No hardware maintenance responsibility
+  - Accessible from anywhere in the world
+  - High availability and redundancy built in
+
+Cloud Service Models:
+  IaaS (Infrastructure as a Service):
+    You get virtual hardware. You manage: OS, runtime, apps.
+    Provider manages: Physical hardware, networking.
+    Example: Amazon EC2
+
+  PaaS (Platform as a Service):
+    You get a platform to run apps. You manage: just your code.
+    Provider manages: OS, runtime, hardware, networking.
+    Example: Google App Engine, Heroku
+
+  SaaS (Software as a Service):
+    You just use the software. You manage: nothing technical.
+    Provider manages: everything.
+    Example: Gmail, Google Docs, Salesforce
+
+
+WHAT IS AWS (AMAZON WEB SERVICES)?
+
+AWS is Amazon's cloud computing platform.
+It is the world's most widely used cloud platform.
+Offers over 200 different services including:
+  - Computing: EC2, Lambda (serverless)
+  - Storage: S3, EBS
+  - Databases: RDS, DynamoDB
+  - Networking: VPC, CloudFront, Route 53
+  - AI/ML: SageMaker, Rekognition
+  - Security: IAM, CloudTrail
+
+
+WHAT IS EC2 (ELASTIC COMPUTE CLOUD)?
+
+EC2 is AWS's virtual server service.
+
+"Elastic" means: Can grow or shrink based on demand.
+  - Start with 1 server, scale to 1000 servers and back automatically.
+
+"Compute" means: It provides computational power (CPU, RAM, storage).
+
+"Cloud" means: Hosted and managed in AWS data centers.
+
+With EC2 you can:
+  - Launch a virtual machine in minutes
+  - Choose your operating system
+  - Choose CPU, RAM, and storage specifications
+  - Pay per hour or per second
+  - Terminate (delete) when no longer needed
+
+EC2 Use Cases:
+  - Hosting web servers and websites
+  - Running databases
+  - Machine learning training
+  - Development and testing environments
+  - High-performance computing
+
+
+KEY EC2 CONCEPTS EXPLAINED
+
+AMI (Amazon Machine Image):
+  A template containing:
+    - Operating System (Linux, Windows)
+    - Pre-installed software
+    - Configuration settings
+  Think of it as a "snapshot" or "image" of a pre-configured computer.
+  When you launch an EC2 instance, you choose an AMI.
+  Common AMIs:
+    Amazon Linux 2: AWS's own optimized Linux distribution
+    Ubuntu 22.04:   Popular free open-source Linux
+    Windows Server: For Windows workloads
+
+Instance Types:
+  Defines the hardware specification of your virtual machine.
+  Format: [family][generation].[size]
+  Examples:
+    t2.micro:  1 vCPU, 1 GB RAM - Free tier eligible! Great for learning.
+    t2.small:  1 vCPU, 2 GB RAM
+    t2.medium: 2 vCPU, 4 GB RAM
+    m5.large:  2 vCPU, 8 GB RAM - General purpose production workloads
+    c5.xlarge: 4 vCPU, 8 GB RAM - Compute optimized
+  Higher specifications = higher hourly cost.
+
+Security Groups:
+  Virtual firewalls controlling what traffic can reach your instance.
+  Rules specify:
+    Type (SSH, HTTP, HTTPS, Custom TCP)
+    Protocol (TCP, UDP)
+    Port range (22 for SSH, 80 for HTTP, 443 for HTTPS)
+    Source (which IP addresses are allowed)
+
+  Best practice: Allow SSH only from YOUR IP address, not 0.0.0.0/0 (everyone).
+  This prevents unauthorized access attempts.
+
+Key Pairs:
+  EC2 uses public-key cryptography for authentication (more secure than passwords).
+  
+  How it works:
+    You create a key pair. AWS stores the PUBLIC key on the instance.
+    You download and keep the PRIVATE key (.pem file).
+    When you SSH in, your private key proves your identity.
+    No password needed!
+  
+  Important: If you lose the private key, you CANNOT recover it.
+  Keep it safe!
+  
+  chmod 400 key.pem is required:
+    chmod 400 = Only the owner can read, no write, no execute, no others.
+    SSH client refuses to use a key file that is "too open" (readable by others).
+    This is a security measure.
+
+Elastic IP:
+  A static public IP address that you own.
+  Regular EC2 instances get a new public IP every time they restart.
+  Elastic IP stays the same until you explicitly release it.
+  Useful for servers that need a stable, predictable IP address.
+  Note: You are charged for Elastic IPs that are NOT associated with a running instance!
+
+VPC (Virtual Private Cloud):
+  Your own private network within AWS.
+  You have full control over:
+    IP address ranges
+    Subnets (subdivisions of the VPC)
+    Route tables
+    Network gateways
+
+
+UNDERSTANDING THE SSH COMMAND
+
+  chmod 400 key.pem
+
+  chmod: Change file permissions (change mode)
+  400 in octal notation means:
+    4 = owner can READ
+    0 = group cannot access
+    0 = others cannot access
+  Total: Owner read-only.
+  SSH requires this level of restriction for security.
+
+  ssh -i key.pem ec2-user@PUBLIC_IP
+
+  ssh: Secure Shell - encrypted remote terminal access protocol
+  -i key.pem: Identity file - use this private key for authentication
+  ec2-user: The username on the remote machine
+  @PUBLIC_IP: Connect to this IP address
+
+  Username varies by AMI:
+    Amazon Linux 2: ec2-user
+    Ubuntu:         ubuntu
+    CentOS:         centos
+    RHEL:           ec2-user
+    Debian:         admin
+
+
+INSTANCE STATES
+
+  pending:   Instance is starting up, not yet usable
+  running:   Instance is running and accessible
+  stopping:  Instance is shutting down (but NOT deleted)
+  stopped:   Instance is off (like turning off a computer)
+             EBS storage is kept, static IP released, no compute charge
+  terminated: Instance is permanently deleted
+              Cannot be recovered!
+
+  stopped vs terminated:
+    stopped = off, can restart, incurs storage charges
+    terminated = deleted forever, no more charges for compute or storage
+
+
+------------------------------------------------------------------------
+STEPS EXPLAINED
+------------------------------------------------------------------------
+
+Step 1: Sign in to AWS Console and navigate to EC2 in your desired region.
+  Region selection matters: Choose the region geographically closest to your users
+  to minimize latency. Each region is a separate geographic area with multiple
+  data centers (Availability Zones).
+
+Step 3: Choose AMI (Amazon Machine Image).
+  This is your template. Amazon Linux 2 is lightweight and AWS-optimized.
+  Ubuntu is popular and well-documented for general use.
+
+Step 4: Choose t2.micro for free tier.
+  AWS Free Tier allows 750 hours/month of t2.micro usage for 12 months.
+  This is essentially free for learning and development purposes.
+
+Step 5: Enable Auto-assign Public IP.
+  Without a public IP, you cannot SSH into your instance from the internet.
+  Enable this for development instances.
+  In production, use a load balancer instead of direct instance access.
+
+Step 8: Security Group Configuration.
+  This is the most important security step!
+  Only allow necessary traffic:
+    SSH (port 22): Required for remote access.
+                   Restrict to YOUR IP: My IP in the dropdown.
+    HTTP (80):     For web servers serving unencrypted traffic.
+    HTTPS (443):   For web servers with SSL/TLS encryption.
+  Never open ALL ports to ALL IPs (0.0.0.0/0) in production!
+
+Step 10: Key Pair.
+  Create a new key pair, give it a name, download the .pem file.
+  Store it in a safe location. You cannot download it again!
+
+Step 12: Connect.
+  After instance shows state=running and both status checks pass,
+  you can connect using SSH.
+
+Step 13: Post-launch setup.
+  Update the OS immediately after connecting:
+    Amazon Linux: sudo yum update -y
+    Ubuntu:       sudo apt update && sudo apt upgrade -y
+  The -y flag automatically answers "yes" to prompts.
+
+
+================================================================================
+PROBLEM 12A: GOOGLE APP ENGINE - DEPLOY A WEB APPLICATION
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS PLATFORM AS A SERVICE (PaaS)?
+
+PaaS is a cloud computing model where:
+  You provide: Your application code
+  Provider provides: Runtime environment, OS, hardware, scaling, networking
+
+Compared to IaaS (like EC2):
+  IaaS: You get virtual hardware. You install OS, configure web server,
+        manage updates, handle scaling manually.
+  PaaS: You just deploy your code. Everything else is managed.
+
+PaaS is like renting an apartment (fully furnished, utilities included)
+vs IaaS which is like renting empty land (you build everything yourself).
+
+
+WHAT IS GOOGLE APP ENGINE?
+
+Google App Engine (GAE) is Google's fully managed PaaS offering.
+
+Features:
+  - Deploy code, not infrastructure
+  - Automatic scaling (handles 1 request or 1 million, same code)
+  - Pay only for requests served (not for idle servers)
+  - Integrated with Google Cloud services
+  - Supports Python, Java, Node.js, Go, PHP, Ruby
+
+App Engine Environments:
+  Standard Environment:
+    - Sandboxed, specific language versions
+    - Scales to zero (no requests = no charges)
+    - Very fast scaling
+    - Lower cost for intermittent traffic
+
+  Flexible Environment:
+    - Run custom Docker containers
+    - More flexibility but no scaling to zero
+    - Better for continuous traffic workloads
+
+
+KEY FILES FOR APP ENGINE DEPLOYMENT
+
+app.yaml:
+  Tells App Engine how to run your application.
+  
+  runtime: python39
+    Use Python 3.9 as the runtime environment.
+  
+  entrypoint: gunicorn -b :$PORT main:app
+    How to start the application.
+    gunicorn: Production-grade WSGI web server (not Flask's dev server)
+    -b :$PORT: Bind to the port provided by App Engine via environment variable
+    main:app: In file main.py, the Flask app object is named "app"
+
+requirements.txt:
+  Lists Python packages to install before running the app.
+  flask:   Web framework for creating the web application
+  gunicorn: Production web server to serve the Flask app
+
+main.py:
+  Your actual application code.
+  For Flask: import Flask, create app, define routes, return responses.
+
+
+FLASK BASICS
+
+Flask is a lightweight Python web framework.
+
+Minimal Flask app:
+  from flask import Flask
+  app = Flask(__name__)
+
+  @app.route('/')
+  def hello():
+      return 'Hello, World!'
+
+  if __name__ == '__main__':
+      app.run(debug=True)
+
+  @app.route('/'): Decorates hello() as the handler for the root URL ("/")
+  return 'Hello, World!': The string becomes the HTTP response body
+  app.run(): Starts Flask's development server (NOT for production!)
+
+
+GUNICORN VS FLASK DEV SERVER
+
+Flask's built-in server (app.run()):
+  - Single-threaded (handles one request at a time)
+  - Not designed for production traffic
+  - Should only be used for development
+
+Gunicorn (Green Unicorn):
+  - Production-grade WSGI server
+  - Handles multiple requests simultaneously
+  - Used by major companies in production
+  - App Engine uses gunicorn as specified in app.yaml
+
+
+DEPLOYMENT PROCESS
+
+gcloud app deploy:
+  1. Uploads your code to Google Cloud Storage
+  2. Builds a new version of your application
+  3. Routes traffic to the new version
+  4. Old version keeps running until traffic switches over
+
+Versions:
+  Each deploy creates a new VERSION.
+  You can have multiple versions running simultaneously.
+  Useful for A/B testing or gradual rollouts.
+  Traffic splitting: Send 10% of users to new version to test it.
+
+
+------------------------------------------------------------------------
+STEPS EXPLAINED
+------------------------------------------------------------------------
+
+Step 1: Create and Configure GCP Project.
+  gcloud projects create PROJECT_ID: Creates a new Google Cloud project.
+  gcloud config set project PROJECT_ID: Sets this as the active project.
+    All subsequent gcloud commands apply to this project.
+  gcloud app create --region=REGION: Initializes App Engine in your project.
+    You can only do this ONCE per project. Choose region wisely!
+    Regions: us-central1, us-east1, europe-west1, asia-southeast1, etc.
+
+Step 2: Prepare Application.
+  Create three files: main.py, app.yaml, requirements.txt.
+  The Flask app should have at least one route that returns a response.
+
+Step 3: Test Locally.
+  ALWAYS test locally before deploying!
+  Virtual environment (venv) keeps your project's packages isolated
+  from system Python packages to avoid conflicts.
+    python3 -m venv venv: Create virtual environment
+    source venv/bin/activate: Activate it (Mac/Linux)
+    pip install -r requirements.txt: Install required packages
+    python main.py: Run Flask dev server
+    Visit http://localhost:5000 in browser to test
+
+Step 4: Deploy.
+  gcloud app deploy app.yaml: Upload and deploy your application.
+  You will be prompted to confirm. Type 'Y' and press Enter.
+  This may take 2-5 minutes on first deploy (building Docker image).
+
+Step 5: Access.
+  gcloud app browse: Opens the deployed app in your browser.
+  URL format: https://PROJECT_ID.REGION.r.appspot.com
+  This URL is permanent and does not change with redeployments.
+
+Step 6: Monitor.
+  gcloud app logs read: View recent application logs.
+  Useful for debugging errors that only occur in production.
+  Google Cloud Console -> App Engine -> Logs for full log viewer.
+
+Step 7: Update.
+  Just modify your code and run gcloud app deploy again.
+  A new version is created. Old versions can be kept for rollback.
+
+
+================================================================================
+PROBLEM 12B (OR): KVM VIRTUALIZATION
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS VIRTUALIZATION?
+
+Virtualization is the technology of creating virtual (not physical) versions
+of computing resources including:
+  - Virtual computers (Virtual Machines)
+  - Virtual storage (virtual disks)
+  - Virtual networks
+
+Without virtualization: One physical server runs one operating system.
+With virtualization: One physical server runs MULTIPLE operating systems
+simultaneously, each isolated from the others.
+
+Benefits:
+  - Better hardware utilization (run multiple workloads on one machine)
+  - Isolation (problem in one VM doesn't affect others)
+  - Flexibility (quickly create, clone, snapshot, delete VMs)
+  - Cost savings (fewer physical servers needed)
+
+
+WHAT IS A HYPERVISOR?
+
+A hypervisor (also called Virtual Machine Monitor) is software that:
+  - Creates and manages virtual machines
+  - Shares physical hardware resources among VMs
+  - Provides isolation between VMs
+
+Type 1 Hypervisor (Bare-metal):
+  Runs directly on the physical hardware.
+  No host OS required.
+  More efficient and direct hardware access.
+  Examples: VMware ESXi, Microsoft Hyper-V, KVM
+
+Type 2 Hypervisor (Hosted):
+  Runs as an application on a host operating system.
+  Host OS runs first, then hypervisor runs on top.
+  Easier to install and use.
+  Slightly less efficient due to extra layer.
+  Examples: VirtualBox, VMware Workstation
+
+
+WHAT IS KVM?
+
+KVM (Kernel-based Virtual Machine) is:
+  - A virtualization solution built into the Linux kernel since 2007
+  - Type 1 hypervisor (bare-metal level performance)
+  - Open-source and free
+  - The hypervisor used under the hood by AWS, Google Cloud, and others
+
+KVM turns the Linux kernel into a hypervisor.
+When KVM is installed, Linux itself manages VMs with near-native performance.
+
+Requirements:
+  CPU must support hardware virtualization:
+    Intel CPU: VT-x (vmx) feature must be enabled in BIOS
+    AMD CPU:   AMD-V (svm) feature must be enabled in BIOS
+  Check: egrep -c '(vmx|svm)' /proc/cpuinfo
+    Non-zero output means virtualization is supported
+
+
+KEY COMPONENTS
+
+QEMU (Quick EMUlator):
+  Emulates hardware for virtual machines.
+  Provides: Virtual CPU, Virtual RAM, Virtual disk, Virtual network card.
+  Works alongside KVM: KVM handles virtualization, QEMU provides device emulation.
+
+libvirt:
+  A management layer and API for virtualization platforms.
+  Provides:
+    virsh: Command-line tool for managing VMs
+    virt-manager: Graphical UI for managing VMs
+    Python/C API for programmatic VM management
+  Makes it easier to manage KVM (and other hypervisors) without low-level commands.
+
+bridge-utils:
+  Creates network bridges that allow VMs to connect to the physical network.
+  A network bridge is like a virtual network switch.
+  With a bridge, VMs can get their own IP addresses on the local network.
+  Without a bridge, VMs use NAT (Network Address Translation) which is more isolated.
+
+virt-install:
+  Command-line tool to create new VMs.
+  Automates the process of creating and configuring VMs.
+
+
+KEY virsh COMMANDS EXPLAINED
+
+  virsh list --all
+    List all virtual machines (both running and stopped).
+    Without --all, only running VMs are shown.
+
+  virsh start testvm
+    Start the VM named "testvm". Like pressing power button.
+
+  virsh shutdown testvm
+    Gracefully shut down "testvm". Sends ACPI shutdown signal.
+    The guest OS shuts down cleanly (saving files, etc.).
+
+  virsh destroy testvm
+    Forcefully stop "testvm". Like pulling the power cord.
+    NOT recommended in production (data loss possible).
+    Use virsh shutdown for graceful shutdown.
+
+  virsh snapshot-create-as testvm snap1
+    Create a snapshot of "testvm" named "snap1".
+    Captures the complete VM state at this point in time.
+    You can restore to this state later if something goes wrong.
+    Extremely useful before making major system changes.
+
+
+VIRT-INSTALL COMMAND PARAMETERS EXPLAINED
+
+  sudo virt-install \
+    --name testvm         Name of the new VM
+    --vcpus 2             Allocate 2 virtual CPU cores
+    --memory 2048         Allocate 2048 MB (2 GB) of RAM
+    --disk size=20        Create a 20 GB virtual disk
+    --cdrom /path/to/iso  Install from this ISO image (like inserting a DVD)
+    --os-variant ubuntu22.04  Optimize for Ubuntu 22.04
+    --network network=default Use the default (NAT) network
+    --graphics none       No graphical display (text-only install)
+    --console pty,target_type=serial  Connect via serial console
+
+
+------------------------------------------------------------------------
+STEPS EXPLAINED
+------------------------------------------------------------------------
+
+Step 1: Verify CPU Support.
+  egrep -c '(vmx|svm)' /proc/cpuinfo
+  /proc/cpuinfo: Virtual file containing CPU information
+  (vmx|svm): Look for either "vmx" (Intel) or "svm" (AMD)
+  -c: Count matching lines (not show them)
+  If output is 0: CPU doesn't support virtualization or it's disabled in BIOS.
+    Enable in BIOS settings: Look for "Intel VT-x" or "AMD-V" and enable.
+  If output is non-zero: Virtualization is supported and enabled.
+
+Step 2: Install Packages.
+  qemu-kvm: The actual KVM hypervisor and QEMU emulator
+  libvirt-daemon-system: The libvirt management daemon (background service)
+  libvirt-clients: Command-line tools (virsh)
+  bridge-utils: Utilities for creating network bridges
+  virt-manager: Graphical VM management tool (optional but helpful)
+
+Step 3: Add User to Groups.
+  libvirt group: Members can manage VMs without sudo
+  kvm group: Members can access /dev/kvm device directly
+  $USER: Shell variable containing current username
+  Must log out and back in for group changes to take effect.
+
+Step 4: Enable libvirtd Service.
+  libvirtd: The libvirt daemon that manages VMs.
+  --now: Start it immediately.
+  enable: Configure it to start automatically at boot.
+
+Step 5: Verify Installation.
+  virsh list --all: Should run without error (empty list is OK, means no VMs yet)
+  virsh capabilities: Shows detailed capabilities of the hypervisor
+
+Steps 6-10: VM creation, management, and networking configuration.
+
+
+================================================================================
+PROBLEM 13: SALESFORCE APEX WITH SELECTION SORT
+================================================================================
+
+------------------------------------------------------------------------
+THEORY
+------------------------------------------------------------------------
+
+WHAT IS SALESFORCE?
+
+Salesforce is the world's #1 Customer Relationship Management (CRM) platform.
+
+CRM = Software that helps businesses manage:
+  - Customer information (contacts, accounts, leads)
+  - Sales pipeline (opportunities, quotes)
+  - Customer service (cases, support tickets)
+  - Marketing campaigns
+
+Why Salesforce?
+  - Used by 150,000+ companies worldwide
+  - Cloud-based: Access from anywhere
+  - Highly customizable with code (Apex) and point-and-click tools
+  - Large ecosystem: 10+ million developers
+
+
+WHAT IS APEX?
+
+Apex is Salesforce's proprietary programming language for custom business logic.
+
+Key characteristics:
+  - Syntax similar to Java (familiar to Java developers)
+  - Runs on Salesforce's servers (not locally)
+  - Tightly integrated with Salesforce database and objects
+  - Automatically handles multi-tenancy (safely runs code from many orgs)
+  - Governor Limits: Apex enforces limits to ensure no single tenant
+    hogs shared resources (e.g., max 100 SOQL queries per transaction)
+
+SOQL (Salesforce Object Query Language):
+  Like SQL but for Salesforce data.
+  [SELECT Id, Name FROM Account WHERE Name = 'Acme']
+
+
+APEX SYNTAX COMPARED TO PYTHON
+
+Python:
+  def selection_sort(arr):
+    n = len(arr)
+    for i in range(n):
+      min_idx = i
+      for j in range(i+1, n):
+        if arr[j] < arr[min_idx]:
+          min_idx = j
+      arr[i], arr[min_idx] = arr[min_idx], arr[i]
+    return arr
+
+Apex (similar to Java):
+  public static List<Integer> selectionSort(List<Integer> arr) {
+    Integer n = arr.size();
+    for (Integer i = 0; i < n - 1; i++) {
+      Integer minIdx = i;
+      for (Integer j = i + 1; j < n; j++) {
+        if (arr[j] < arr[minIdx]) {
+          minIdx = j;
+        }
+      }
+      if (minIdx != i) {
+        Integer temp = arr[i];
+        arr[i] = arr[minIdx];
+        arr[minIdx] = temp;
+      }
+    }
+    return arr;
+  }
+
+Key differences:
+  1. Type declarations required:
+     Python:  min_idx = i         (dynamic typing, no declaration needed)
+     Apex:    Integer minIdx = i;  (static typing, must declare type)
+
+  2. Method signatures:
+     Python:  def function_name(params):
+     Apex:    access_modifier return_type method_name(param_type param_name)
+
+  3. Loops:
+     Python:  for i in range(n):
+     Apex:    for (Integer i = 0; i < n; i++)
+
+  4. Semicolons:
+     Python:  No semicolons at end of statements
+     Apex:    Semicolons required at end of every statement
+
+  5. Curly braces:
+     Python:  Indentation defines blocks
+     Apex:    Curly braces {} define blocks
+
+  6. Swap:
+     Python:  a, b = b, a         (elegant tuple unpacking)
+     Apex:    Must use temp variable:
+              Integer temp = arr[i]; arr[i] = arr[minIdx]; arr[minIdx] = temp;
+
+  7. Array methods:
+     Python:  len(arr)
+     Apex:    arr.size()
+
+  8. Access modifiers:
+     Python:  No access modifiers (everything is public by default)
+     Apex:    public, private, protected, global
+
+
+ACCESS MODIFIERS IN APEX
+
+  private:   Only accessible within the same class
+  public:    Accessible from other classes in the same namespace/package
+  protected: Accessible within class and subclasses
+  global:    Accessible from everywhere, including external orgs and APIs
+
+  For REST API endpoints, must use "global".
+
+
+REST API WITH APEX (WEB SERVICE)
+
+  @RestResource(urlMapping='/selectionsort/*')
+  global with sharing class SelectionSortService {
+    @HttpPost
+    global static List<Integer> sort(List<Integer> input) {
+      return SelectionSortUtil.selectionSort(input);
+    }
+  }
+
+  @RestResource(urlMapping='/selectionsort/*'):
+    Makes this class a REST API endpoint.
+    URL pattern: /services/apexrest/selectionsort/
+    * = wildcard (any path after /selectionsort/ is also matched)
+
+  global with sharing:
+    global: Required for REST endpoints
+    with sharing: Enforces object-level security (users can only access
+                  data their Salesforce permissions allow)
+
+  @HttpPost:
+    This method handles HTTP POST requests.
+    Other options: @HttpGet, @HttpPut, @HttpDelete, @HttpPatch
+
+  Input/Output:
+    Salesforce automatically deserializes JSON request body to List<Integer>
+    Automatically serializes return List<Integer> back to JSON response
+
+
+UNIT TESTING IN SALESFORCE
+
+Salesforce REQUIRES unit tests!
+
+  Why mandatory?
+    Salesforce is a multi-tenant platform.
+    Your code runs alongside code from thousands of other companies.
+    Salesforce needs confidence that your code is correct and reliable.
+    They require 75% code coverage for production deployment.
+
+  @IsTest annotation:
+    Marks a class or method as test code.
+    Test code does NOT count against your Apex code limits.
+    Test code does NOT execute in production, only during test runs.
+
+  System.assertEquals(expected, actual):
+    Assert that expected value equals actual value.
+    If not equal, the test FAILS with a detailed error message.
+    This automatically verifies your code works correctly.
+
+
+WORKBENCH
+
+Workbench is a web-based tool for:
+  - Querying Salesforce data with SOQL
+  - Invoking REST API endpoints
+  - Exploring Salesforce objects and fields
+  - Data manipulation (insert, update, delete, upsert)
+
+URL: https://workbench.developerforce.com/
+Login with your Salesforce credentials.
+Navigate to utilities -> REST Explorer to test your REST API.
+
+
+SALESFORCE DEVELOPER CONSOLE
+
+The Developer Console is Salesforce's web-based IDE:
+  - Write and save Apex classes and triggers
+  - Run unit tests
+  - Execute anonymous Apex (like a REPL / interactive prompt)
+  - View debug logs
+  - Query data with SOQL
+
+Access: Setup -> Developer Console (or top-right menu icon)
+
+
+------------------------------------------------------------------------
+CODE EXPLANATION (LINE BY LINE)
+------------------------------------------------------------------------
+
+    public class SelectionSortUtil {
+
+  public: Accessible from other classes
+  class: Declaring a class (blueprint for objects and methods)
+  SelectionSortUtil: Name of the class (utility = helper class)
+
+
+    public static List<Integer> selectionSort(List<Integer> arr) {
+
+  public: Anyone can call this method
+  static: Can call without creating an instance (SelectionSortUtil.selectionSort(...))
+  List<Integer>: Returns a list of integers
+  selectionSort: Method name
+  List<Integer> arr: Parameter - a list of integers named arr
+
+
+        if (arr == null) return arr;
+
+  Guard clause: If input is null (nothing passed), return null immediately.
+  This prevents NullPointerException on arr.size() below.
+  Apex uses null (not None like Python) for absent values.
+
+
+        Integer n = arr.size();
+        for (Integer i = 0; i < n - 1; i++) {
+
+  arr.size(): Returns number of elements (equivalent to Python's len(arr))
+  for loop: Classic C-style for loop.
+    Initialize: Integer i = 0  (start at 0)
+    Condition:  i < n - 1      (continue while true)
+    Update:     i++            (increment i by 1 each iteration)
+
+  Why n-1 and not n?
+    After the last iteration (i = n-2), the last element (index n-1) is
+    automatically in the correct position.
+    So we don't need to process the very last element separately.
+
+
+            Integer minIdx = i;
+            for (Integer j = i + 1; j < n; j++) {
+                if (arr[j] < arr[minIdx]) {
+                    minIdx = j;
+                }
+            }
+
+  Same selection sort logic as Python version.
+  Assume minimum is at i.
+  Search through unsorted portion (i+1 to n-1).
+  Update minIdx when smaller element found.
+
+
+            if (minIdx != i) {
+                Integer temp = arr[i];
+                arr[i] = arr[minIdx];
+                arr[minIdx] = temp;
+            }
+
+  Only swap if we actually found a smaller element.
+  (Optimization: skips unnecessary same-position swaps)
+
+  Three-line swap (no tuple unpacking in Apex):
+    Save arr[i] in temp variable
+    Overwrite arr[i] with the minimum (arr[minIdx])
+    Overwrite arr[minIdx] with the saved value (temp)
+
+
+    @IsTest
+    private static void testSelectionSort() {
+        List<Integer> input = new List<Integer>{64, 25, 12, 22, 11};
+        List<Integer> sorted = selectionSort(new List<Integer>(input));
+        System.assertEquals(new List<Integer>{11, 12, 22, 25, 64}, sorted);
+    }
+
+  @IsTest: Marks this as a test method. Only runs during test execution.
+  private: Not accessible outside this class (tests don't need to be public)
+  void: Returns nothing
+
+  new List<Integer>{64, 25, 12, 22, 11}:
+    Creates a new list with initial values.
+    {} syntax for initialization values.
+
+  new List<Integer>(input):
+    Creates a COPY of the input list.
+    We pass a copy so the original input is unmodified.
+    (selectionSort modifies the list in place)
+
+  System.assertEquals(expected, actual):
+    First argument is expected value.
+    Second argument is actual value from our code.
+    If they differ, test fails with error showing both values.
+    If equal, test passes.
+
+
+REST SERVICE CLASS
+
+    @RestResource(urlMapping='/selectionsort/*')
+    global with sharing class SelectionSortService {
+        @HttpPost
+        global static List<Integer> sort(List<Integer> input) {
+            return SelectionSortUtil.selectionSort(input);
+        }
+    }
+
+  @RestResource: Makes this an HTTP-accessible REST endpoint
+  urlMapping='/selectionsort/*': The URL path for this service
+  global: Required for API-accessible classes
+
+  @HttpPost: Method is called when HTTP POST is made to the URL
+  global static: Accessible from anywhere, no instance needed
+  List<Integer> sort(List<Integer> input):
+    Input: Salesforce auto-parses JSON array from request body to List<Integer>
+    Output: Return value auto-serialized back to JSON array
+
+  To call this API (from any REST client):
+    HTTP Method: POST
+    URL: https://your-org.salesforce.com/services/apexrest/selectionsort/
+    Headers: Authorization: Bearer YOUR_OAUTH_TOKEN
+             Content-Type: application/json
+    Body: [64, 25, 12, 22, 11]
+    Response: [11, 12, 22, 25, 64]
+
+
+DEPLOYMENT STEPS EXPLAINED
+
+Step 1: Login to Developer Org.
+  Use Salesforce Developer Edition (free at developer.salesforce.com).
+  This is a free, full-featured Salesforce org for development and learning.
+
+Step 2: Open Developer Console.
+  Your browser-based code editor for Apex.
+  File menu -> New -> Apex Class to create a new class.
+
+Step 3: Paste and Save.
+  Copy the SelectionSortUtil class code and paste it.
+  Ctrl+S (or File -> Save) to save.
+  Salesforce compiles it immediately. Any syntax errors shown at save time.
+
+Step 4: Run Tests.
+  Developer Console -> Test -> New Run -> Select testSelectionSort -> Run Test
+  OR: Setup -> Apex Test Execution -> Select test -> Execute
+
+  Results show:
+    Pass: Green checkmark, assertion succeeded
+    Fail: Red X, shows which assertion failed and with what values
+
+Step 5: Deploy REST Wrapper.
+  Create a second Apex class: SelectionSortService.
+  This provides the HTTP API endpoint.
+
+Step 6: Test via Workbench.
+  Login to workbench.developerforce.com
+  utilities -> REST Explorer
+  Method: POST
+  URL: /services/apexrest/selectionsort/
+  Request body: [64, 25, 12, 22, 11]
+  Execute -> See [11, 12, 22, 25, 64] in response
+
+Step 7: Edge Cases to Test.
+  Empty list: []  -> Should return []
+  Null input:     -> Should return null (handled by guard clause)
+  Already sorted: [1,2,3,4,5] -> Should return [1,2,3,4,5]
+  Duplicates: [3,3,1,1,2] -> Should return [1,1,2,3,3]
+  Single element: [42] -> Should return [42]
+
+
+================================================================================
+QUICK REFERENCE SUMMARY
+================================================================================
+
+ALGORITHM COMPARISON TABLE
+
+Algorithm        Data Structure    Time Complexity    Space      Key Property
+----------------------------------------------------------------------
+DFS              Stack/Recursion   O(V + E)           O(V)       Goes deep first
+BFS              Queue (deque)     O(V + E)           O(V)       Goes wide first
+A*               Min-Heap          O(E log V)         O(V)       Heuristic guided
+Selection Sort   Array             O(n^2)             O(1)       Min selection
+Prim's MST       Min-Heap          O(E log V)         O(V+E)     Grows from vertex
+Kruskal's MST    Union-Find        O(E log E)         O(V+E)     Sorts all edges
+Dijkstra's       Min-Heap          O(E log V)         O(V)       Shortest path (weighted)
+N-Queens         Sets              O(N!)              O(N)       Backtracking + pruning
+
+Legend:
+  V = number of vertices
+  E = number of edges
+  n = number of array elements
+  N = number of queens
+
+
+KEY CONCEPTS GLOSSARY
+
+Graph:
+  Collection of vertices (nodes) connected by edges.
+
+Adjacency List:
+  Dictionary representation: {vertex: [list of neighbors]}
+
+Heuristic:
+  An educated guess/estimate used to guide search toward goal.
+
+Manhattan Distance:
+  Distance measure: |row1-row2| + |col1-col2|. No diagonal movement.
+
+Admissible Heuristic:
+  Never overestimates the true cost. Guarantees A* finds optimal solution.
+
+Union-Find:
+  Data structure tracking which vertices are in the same component.
+  Used to detect cycles in Kruskal's algorithm.
+
+Path Compression:
+  Optimization in Union-Find: make nodes point directly to root.
+
+Backtracking:
+  Algorithm strategy: try an option, if invalid undo it, try next option.
+
+Greedy Algorithm:
+  Always makes the locally best choice, hoping for global optimum.
+
+MST (Minimum Spanning Tree):
+  Spanning tree connecting all vertices with minimum total edge weight.
+
+Spanning Tree:
+  V vertices connected with V-1 edges and no cycles.
+
+Relaxation:
+  Update shortest distance if a better (shorter) path is found.
+
+Priority Queue:
+  Data structure that always retrieves the minimum (or maximum) element first.
+
+Regular Expression (Regex):
+  Pattern for matching text. | means OR, . means any character, etc.
+
+EC2:
+  Amazon's virtual server (IaaS) service. Elastic Compute Cloud.
+
+AMI:
+  Amazon Machine Image. Template for launching EC2 instances.
+
+Security Group:
+  Virtual firewall for EC2 instances controlling allowed traffic.
+
+PaaS:
+  Platform as a Service. Provider manages infrastructure, you manage code only.
+
+KVM:
+  Kernel-based Virtual Machine. Linux-built-in hypervisor for virtual machines.
+
+libvirt:
+  Management layer and API for KVM and other hypervisors.
+
+Apex:
+  Salesforce's proprietary Java-like programming language for custom logic.
+
+SOQL:
+  Salesforce Object Query Language. SQL-like language for Salesforce data.
+
+Governor Limits:
+  Apex execution limits enforced by Salesforce to protect shared resources.
+
+
+================================================================================
+                           END OF THEORY AND EXPLANATION GUIDE
+================================================================================
