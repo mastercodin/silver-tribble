@@ -112,32 +112,27 @@ plt.subplot(1,1,1)
 sns.histplot(df['fare_amount'])
 plt.show()
 
-sns.boxplot(y=df['fare_amount'])
+sns.boxplot(y=df['fare_amount'], orient='v')
 plt.show()
 
-sns.boxplot(y=df['passenger_count'])
+sns.boxplot(y=df['passenger_count'], orient='v')
 plt.show()
 
 def find_outliers_IQR(data):
     q1 = data.quantile(0.25)
     q3 = data.quantile(0.75)
     IQR = q3 - q1
-    outliers = data[(data < (q1 - 1.5 * IQR)) | (data > (q3 + 1.5 * IQR))]
-    return outliers
+    lb = q1 - 1.5 * IQR
+    ub = q3 + 1.5 * IQR
+    outliers = data[(data < lb) | (data > ub)]
+    return lb, ub, outliers
 
-outliers = find_outliers_IQR(df['fare_amount'])
+lower_bound, upper_bound, outliers = find_outliers_IQR(df['fare_amount'])
 print("Number of outliers:", len(outliers))
 print("Max outlier value:", outliers.max())
 print("Min outlier value:", outliers.min())
 
-q1 = df['fare_amount'].quantile(0.25)
-q3 = df['fare_amount'].quantile(0.75)
-IQR = q3 - q1
-
-lower_bound = q1 - 1.5 * IQR
-upper_bound = q3 + 1.5 * IQR
-
-df_cleaned = df[(df['fare_amount'] >= lower_bound) & (df['fare_amount'] <= upper_bound)]
+df_cleaned = df[(df['fare_amount'] >= lower_bound) & (df['fare_amount'] <= upper_bound)].copy()
 
 print(df_cleaned.shape)
 
@@ -151,14 +146,14 @@ plt.subplot(1,2,2)
 sns.histplot(df_cleaned['fare_amount'])
 plt.show()
 
-sns.boxplot(y=df_cleaned['fare_amount'])
+sns.boxplot(y=df_cleaned['fare_amount'], orient='v')
 plt.show()
 
 plt.figure(figsize=(16,5))
 plt.subplot(1,2,1)
-sns.boxplot(y=df['fare_amount'])
+sns.boxplot(y=df['fare_amount'], orient='v')
 plt.subplot(1,2,2)
-sns.boxplot(y=df_cleaned['fare_amount'])
+sns.boxplot(y=df_cleaned['fare_amount'], orient='v')
 plt.show()
 
 df_cleaned['fare_log'] = np.log1p(df_cleaned['fare_amount'])
@@ -202,27 +197,13 @@ print("SepalLengthCm mean =", df.SepalLengthCm.mean())
 
 print(df.groupby(['Species']).count())
 
-print("SepalLengthCm Mean of Species:\n", df.groupby(['Species']).SepalLengthCm.mean())
+for col in ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']:
+    print(f"{col} Mean:\n", df.groupby('Species')[col].mean())
+    print(f"{col} Std:\n", df.groupby('Species')[col].std())
 
-print("SepalWidthCm Mean of Species:\n", df.groupby(['Species']).SepalWidthCm.mean())
-
-print("PetalLengthCm Mean of Species:\n", df.groupby(['Species']).PetalLengthCm.mean())
-
-print("PetalWidthCm Mean of Species:\n", df.groupby(['Species']).PetalWidthCm.mean())
-
-print("SepalLengthCm 25th percentile (Q1):\n", df.groupby(['Species']).SepalLengthCm.quantile(0.25))
-
-print("SepalWidthCm 50th percentile (Q2):\n", df.groupby(['Species']).SepalWidthCm.quantile(0.50))
-
-print("PetalLengthCm 75th percentile (Q3):\n", df.groupby(['Species']).PetalLengthCm.quantile(0.75))
-
-print("SepalLengthCm Standard Deviation:\n", df.groupby(['Species']).SepalLengthCm.std())
-
-print("SepalWidthCm Standard Deviation:\n", df.groupby(['Species']).SepalWidthCm.std())
-
-print("PetalLengthCm Standard Deviation:\n", df.groupby(['Species']).PetalLengthCm.std())
-
-print("PetalWidthCm Standard Deviation:\n", df.groupby(['Species']).PetalWidthCm.std())
+print("SepalLengthCm 25th percentile (Q1):\n", df.groupby('Species').SepalLengthCm.quantile(0.25))
+print("SepalWidthCm 50th percentile (Q2):\n", df.groupby('Species').SepalWidthCm.quantile(0.50))
+print("PetalLengthCm 75th percentile (Q3):\n", df.groupby('Species').PetalLengthCm.quantile(0.75))
 
 print("\nSummary stats for Iris-setosa:")
 print(df[df['Species'] == 'Iris-setosa'].describe())
@@ -370,7 +351,7 @@ print("Recall:", recall)
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
 
 data = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv")
 
@@ -392,30 +373,9 @@ y_pred = model.predict(X_test)
 
 cm = confusion_matrix(y_test, y_pred, labels=["setosa", "versicolor", "virginica"])
 print("Confusion Matrix:\n", cm)
-
-TN = cm[0][0]
-FP = cm[0][1]
-FN = cm[1][0]
-TP = cm[1][1]
-
-print("TP:", TP)
-print("FP:", FP)
-print("TN:", TN)
-print("FN:", FN)
-
-accuracy = (TP + TN) / (TP + TN + FP + FN)
-print("Accuracy:", accuracy)
-
-error_rate = (FP + FN) / (TP + TN + FP + FN)
-print("Error Rate:", error_rate)
-
-precision = TP / (TP + FP)
-print("Precision:", precision)
-
-recall = TP / (TP + FN)
-print("Recall:", recall)
-
 print("\nOverall Accuracy Score:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
 
 
 ############
@@ -434,10 +394,12 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk import pos_tag
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+for res in ['tokenizers/punkt', 'corpora/stopwords', 'corpora/wordnet', 'taggers/averaged_perceptron_tagger',
+            'tokenizers/punkt_tab', 'taggers/averaged_perceptron_tagger_eng']:
+    try:
+        nltk.data.find(res)
+    except LookupError:
+        nltk.download(res.split('/')[-1], quiet=True)
 
 text = """Text analytics is the process of analyzing text data to extract useful information.
 It involves tokenization, tagging, and cleaning of text."""
@@ -542,12 +504,6 @@ plt.title('Age Distribution by Gender and Survival')
 plt.xlabel('Gender')
 plt.ylabel('Age')
 plt.show()
-
-# OBSERVATIONS:
-# - Female survivors tend to be younger than female non-survivors.
-# - Male survivors are spread across all age groups.
-# - Children (low age) had higher survival chances in both genders.
-# - Older males had lower survival chances compared to older females.
 
 
 ############
