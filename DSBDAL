@@ -1,17 +1,23 @@
 ###################################################################################
-# DATA SCIENCE AND BIG DATA ANALYTICS PYTHON SNIPPET CODE
+# DATA SCIENCE AND BIG DATA ANALYTICS - PYTHON AND JAVA SNIPPET CODE
 # INSTRUCTIONS:
-# 1. PASTE THE CODE  BUT 1 LINE AT A TIME!!
-# 2. DONT COPY THIS FILE AS IT MAY MAKE A CONFUSION TO THE PYTHON NOTEBOOK!
+# 1. PASTE THE CODE BUT 1 LINE AT A TIME!!
+# 2. DONT COPY THIS FILE AS IT MAY MAKE CONFUSION IN THE PYTHON NOTEBOOK!
+# 3. FOR PRACTICAL 11 AND 12, CREATE A JAVA FILE NOT A PYTHON NOTEBOOK!
 ###################################################################################
+
 
 ############
 # PRACTICAL 1 - Data Wrangling I
 # - Import all necessary Python libraries.
-# - Find an open-source dataset from the internet (e.g., Kaggle), clearly describe the dataset, mention the source and URL.
+# - Find an open-source dataset from the internet (e.g., Kaggle).
+# - Clearly describe the dataset and mention the source URL.
 # - Load the dataset into a pandas DataFrame.
-# - Check for missing values using `pandas.isnull()`. Use `describe()` to view basic statistics. Explain variables and check DataFrame dimensions.
-# - Check data types of all columns. Convert any column with wrong data type to the correct type.
+# - Check for missing values using pandas.isnull().
+# - Use describe() to view basic statistics.
+# - Explain variables and check DataFrame dimensions.
+# - Check data types of all columns.
+# - Convert any column with wrong data type to the correct type.
 # - Convert categorical (text) variables into numerical variables in Python.
 ############
 
@@ -42,15 +48,34 @@ print(df.dtypes)
 print("\nLast 5 rows:")
 print(df.tail())
 
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+print("\nColumn Names:")
+print(df.columns)
+
+df['Species'] = df['Species'].astype('category')
+print("\nUpdated Data Types:")
+print(df.dtypes)
+
+df['Species_encoded'] = df['Species'].cat.codes
+print("\nEncoded Species Column:")
+print(df[['Species', 'Species_encoded']].head(10))
+
+print("\nFinal DataFrame:")
+print(df.head())
+
 
 ############
 # PRACTICAL 2 - Data Wrangling II
-# - Check all variables for missing values and inconsistent data. Handle them using suitable methods (e.g., filling, removing).
-# - Check all numerical variables for outliers. Handle outliers using suitable techniques (e.g., removing, capping, transformation).
+# - Check all variables for missing values and inconsistent data.
+# - Handle missing values using suitable methods (filling or removing).
+# - Check all numerical variables for outliers.
+# - Handle outliers using suitable techniques (removing, capping, transformation).
 # - Apply a data transformation to at least one variable to:
-# - Change scale for easier understanding, or
-# - Convert a non-linear relationship into a more linear one, or
-# - Reduce skewness and make distribution closer to normal.
+#   - Change scale for easier understanding, or
+#   - Convert a non-linear relationship into a linear one, or
+#   - Reduce skewness and make distribution closer to normal.
 ############
 
 import pandas as pd
@@ -72,6 +97,14 @@ print(df.describe())
 
 print(df.describe()[['fare_amount', 'passenger_count']])
 
+print(df.shape)
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+df = df.dropna()
+
+print("\nShape after removing missing values:")
 print(df.shape)
 
 plt.figure(figsize=(16,5))
@@ -112,45 +145,50 @@ sns.histplot(df_cleaned['fare_amount'])
 plt.show()
 
 plt.figure(figsize=(16,5))
-
 plt.subplot(1,2,1)
 sns.histplot(df['fare_amount'])
-
 plt.subplot(1,2,2)
 sns.histplot(df_cleaned['fare_amount'])
-
 plt.show()
 
 sns.boxplot(y=df_cleaned['fare_amount'])
 plt.show()
 
 plt.figure(figsize=(16,5))
-
 plt.subplot(1,2,1)
 sns.boxplot(y=df['fare_amount'])
-
 plt.subplot(1,2,2)
 sns.boxplot(y=df_cleaned['fare_amount'])
+plt.show()
 
+df_cleaned['fare_log'] = np.log1p(df_cleaned['fare_amount'])
+
+print("\nLog Transformed fare_amount:")
+print(df_cleaned['fare_log'].describe())
+
+plt.figure(figsize=(16,5))
+plt.subplot(1,2,1)
+sns.histplot(df_cleaned['fare_amount'])
+plt.title("Before Log Transformation")
+plt.subplot(1,2,2)
+sns.histplot(df_cleaned['fare_log'])
+plt.title("After Log Transformation")
 plt.show()
 
 
 ############
-# PRACTICAL 3 - Basic Statistics - Measures of Central Tendencies and Variance
-# - Summary statistics grouped by a categorical variable:
-#    - Choose one numeric variable and one categorical variable.
-#    - Calculate mean, median, minimum, maximum, standard deviation for the numeric variable grouped by categories.
-#    - Create a Python list storing a numeric value for each category.
-# - Statistics on Iris dataset:
-#    - Print basic statistical details (percentiles, mean, standard deviation, etc.) for each species: Iris-setosa, Iris-versicolor, Iris-virginica.
+# PRACTICAL 3 - Basic Statistics - Measures of Central Tendency and Variance
+# - Provide summary statistics grouped by a categorical variable.
+# - Calculate mean, median, min, max, and standard deviation.
+# - Create a Python list storing a numeric value for each category.
+# - Print basic statistical details for each Iris species.
+# - Iris species: Iris-setosa, Iris-versicolor, Iris-virginica.
 ############
 
 import pandas as pd
 import numpy as np
 
 df = pd.read_csv("Iris.csv")
-
-print(df)
 
 print(df.head())
 
@@ -172,33 +210,40 @@ print("PetalLengthCm Mean of Species:\n", df.groupby(['Species']).PetalLengthCm.
 
 print("PetalWidthCm Mean of Species:\n", df.groupby(['Species']).PetalWidthCm.mean())
 
-print("SepalLengthCm 25th percentile (Q1):\n",
-      df.groupby(['Species']).SepalLengthCm.quantile(0.25))
+print("SepalLengthCm 25th percentile (Q1):\n", df.groupby(['Species']).SepalLengthCm.quantile(0.25))
 
-print("SepalWidthCm 50th percentile (Q2):\n",
-      df.groupby(['Species']).SepalWidthCm.quantile(0.50))
+print("SepalWidthCm 50th percentile (Q2):\n", df.groupby(['Species']).SepalWidthCm.quantile(0.50))
 
-print("PetalLengthCm 75th percentile (Q3):\n",
-      df.groupby(['Species']).PetalLengthCm.quantile(0.75))
+print("PetalLengthCm 75th percentile (Q3):\n", df.groupby(['Species']).PetalLengthCm.quantile(0.75))
 
-print("SepalLengthCm Standard Deviation:\n",
-      df.groupby(['Species']).SepalLengthCm.std())
+print("SepalLengthCm Standard Deviation:\n", df.groupby(['Species']).SepalLengthCm.std())
 
-print("SepalWidthCm Standard Deviation:\n",
-      df.groupby(['Species']).SepalWidthCm.std())
+print("SepalWidthCm Standard Deviation:\n", df.groupby(['Species']).SepalWidthCm.std())
 
-print("PetalLengthCm Standard Deviation:\n",
-      df.groupby(['Species']).PetalLengthCm.std())
+print("PetalLengthCm Standard Deviation:\n", df.groupby(['Species']).PetalLengthCm.std())
 
-print("PetalWidthCm Standard Deviation:\n",
-      df.groupby(['Species']).PetalWidthCm.std())
+print("PetalWidthCm Standard Deviation:\n", df.groupby(['Species']).PetalWidthCm.std())
+
+print("\nSummary stats for Iris-setosa:")
+print(df[df['Species'] == 'Iris-setosa'].describe())
+
+print("\nSummary stats for Iris-versicolor:")
+print(df[df['Species'] == 'Iris-versicolor'].describe())
+
+print("\nSummary stats for Iris-virginica:")
+print(df[df['Species'] == 'Iris-virginica'].describe())
+
+sepal_length_list = df.groupby('Species')['SepalLengthCm'].mean().tolist()
+print("\nMean SepalLengthCm per Species as list:", sepal_length_list)
 
 
 ############
 # PRACTICAL 4 - Data Analytics I - Linear Regression
-# Linear Regression (Univariate and Multivariate)
-# - Build a Linear Regression model using Python or R to predict house prices with the Boston Housing Dataset (from Kaggle).
-# - Goal: Predict house price (target variable) using given features (input variables).
+# - Build a Linear Regression model using Python to predict house prices.
+# - Use the Boston Housing dataset from Kaggle.
+# - Goal: Predict house price (MEDV) using given features.
+# - Evaluate the model using MSE and R2 Score.
+# - Plot Actual vs Predicted prices.
 ############
 
 import pandas as pd
@@ -216,12 +261,14 @@ print(data.isnull().sum())
 
 data = data.dropna()
 
+print(data.describe())
+
+print(data.shape)
+
 X = data.drop("MEDV", axis=1)
 y = data["MEDV"]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 model = LinearRegression()
 model.fit(X_train, y_train)
@@ -240,12 +287,19 @@ plt.ylabel("Predicted Prices")
 plt.title("Actual vs Predicted House Prices")
 plt.show()
 
+plt.plot(y_test.values, label='Actual')
+plt.plot(y_pred, label='Predicted')
+plt.legend()
+plt.title("Actual vs Predicted - Line Plot")
+plt.show()
+
 
 ############
 # PRACTICAL 5 - Data Analytics II - Logistic Regression
-# - Analyze the `Social_Network_Ads.csv` dataset.
-# - Build a Logistic Regression model to classify the data (predict an outcome).
-# - Evaluate the model using Confusion Matrix, Accuracy, Error Rate, Precision, and Recall.
+# - Analyze the Social_Network_Ads.csv dataset.
+# - Build a Logistic Regression model to classify whether a user purchased or not.
+# - Evaluate the model using Confusion Matrix.
+# - Calculate TP, FP, TN, FN, Accuracy, Error Rate, Precision, and Recall.
 ############
 
 import pandas as pd
@@ -260,12 +314,14 @@ data = pd.read_csv("Social_Network_Ads.csv")
 
 print(data.head())
 
+print(data.info())
+
+print(data.describe())
+
 X = data[['Age', 'EstimatedSalary']]
 y = data['Purchased']
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=0
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
 
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
@@ -304,25 +360,29 @@ print("Recall:", recall)
 
 ############
 # PRACTICAL 6 - Data Analytics III - Naive Bayes
-# - Write a program to classify Iris flowers using the Naive Bayes algorithm.
-# - Evaluate model performance by calculating Confusion Matrix and checking Accuracy.
+# - Classify Iris flowers using the Naive Bayes (GaussianNB) algorithm.
+# - Use the iris.csv dataset.
+# - Evaluate the model using Confusion Matrix.
+# - Calculate TP, FP, TN, FN, Accuracy, Error Rate, Precision, and Recall.
 ############
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 data = pd.read_csv("iris.csv")
 
 print(data.head())
 
+print(data.info())
+
+print(data.describe())
+
 X = data.drop("species", axis=1)
 y = data["species"]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 model = GaussianNB()
 model.fit(X_train, y_train)
@@ -354,12 +414,16 @@ print("Precision:", precision)
 recall = TP / (TP + FN)
 print("Recall:", recall)
 
+print("\nOverall Accuracy Score:", accuracy_score(y_test, y_pred))
+
 
 ############
 # PRACTICAL 7 - Text Analytics
 # - Take a sample text document.
-# - Apply preprocessing steps: Tokenization, POS Tagging, Stop word removal, Stemming, Lemmatization.
-# - Represent the document using Term Frequency (TF) and Inverse Document Frequency (IDF).
+# - Apply preprocessing: Tokenization, POS Tagging, Stop word removal,
+#   Stemming, and Lemmatization.
+# - Represent the document using Term Frequency (TF) and
+#   Inverse Document Frequency (IDF).
 ############
 
 import nltk
@@ -412,9 +476,9 @@ print("\nTF-IDF Matrix:\n", tfidf_matrix.toarray())
 
 ############
 # PRACTICAL 8 - Data Visualization I
-# - Use the built-in "titanic" dataset from Seaborn.
-# - Explore the dataset to find patterns.
-# - Write Python code to check how ticket price (fare) is distributed by plotting a histogram.
+# - Use the built-in titanic dataset from Seaborn (891 rows).
+# - Explore the dataset and find patterns.
+# - Plot a histogram to show how ticket price (fare) is distributed.
 ############
 
 import seaborn as sns
@@ -454,9 +518,10 @@ plt.show()
 
 ############
 # PRACTICAL 9 - Data Visualization II
-# - Use the built-in "titanic" dataset.
-# - Draw a box plot to show how age is distributed for each gender, and show whether passengers survived or not (use columns: gender, age, survived).
-# - Write observations and conclusions.
+# - Use the built-in titanic dataset.
+# - Draw a boxplot for age distribution grouped by gender and survival status.
+# - Columns used: sex, age, survived.
+# - Write observations and conclusions based on the plot.
 ############
 
 import seaborn as sns
@@ -468,22 +533,29 @@ print(titanic.head())
 
 print(titanic.info())
 
+print(titanic[['sex', 'age', 'survived']].describe())
+
 plt.figure(figsize=(8,6))
 sns.boxplot(x='sex', y='age', hue='survived', data=titanic)
-
 plt.title('Age Distribution by Gender and Survival')
 plt.xlabel('Gender')
 plt.ylabel('Age')
-
 plt.show()
+
+# OBSERVATIONS:
+# - Female survivors tend to be younger than female non-survivors.
+# - Male survivors are spread across all age groups.
+# - Children (low age) had higher survival chances in both genders.
+# - Older males had lower survival chances compared to older females.
 
 
 ############
 # PRACTICAL 10 - Data Visualization III
-# - Download Iris flower dataset (or similar) and load into DataFrame.
-# - Find how many features (columns) the dataset has and identify their types (numeric, categorical/nominal).
+# - Download Iris dataset or any dataset and load into a DataFrame.
+# - Find number of features and their types (numeric or nominal/categorical).
 # - Draw a histogram for each feature to show distribution.
-# - Draw a boxplot for each feature, compare distributions, and find outliers.
+# - Draw a boxplot for each feature.
+# - Compare distributions and identify outliers.
 ############
 
 import pandas as pd
@@ -493,8 +565,15 @@ import seaborn as sns
 df = sns.load_dataset('iris')
 
 print(df.head())
+
 print(df.info())
+
 print(df.describe())
+
+print("\nNumber of features:", len(df.columns))
+
+print("\nData types of each feature:")
+print(df.dtypes)
 
 df.hist(figsize=(10,8))
 plt.suptitle("Histograms of Iris Features")
@@ -509,17 +588,20 @@ for col in df.columns[:-1]:
     Q1 = df[col].quantile(0.25)
     Q3 = df[col].quantile(0.75)
     IQR = Q3 - Q1
-
-    outliers = df[(df[col] < (Q1 - 1.5 * IQR)) |
-                  (df[col] > (Q3 + 1.5 * IQR))]
-
+    outliers = df[(df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))]
     print(f"\nOutliers in {col}:")
     print(outliers[col])
 
+
 ############
-# PRACTICAL 11 - Hadoop MapReduce - WordCount
-# - Develop a Java program for a simple WordCount application that uses the Hadoop MapReduce framework (running in local/standalone mode) to count the number of occurrences of each word in a given input file.
+# PRACTICAL 11 - Hadoop MapReduce - WordCount (JAVA)
+# NOTE: THIS IS A JAVA PROGRAM. SAVE THIS AS WordCount.java
+# DO NOT RUN THIS IN A PYTHON NOTEBOOK!
+# - Develop a Java program using Hadoop MapReduce.
+# - Count the number of occurrences of each word in a given input file.
+# - Run this in local standalone Hadoop setup.
 ############
+
 import java.io.IOException;
 import java.util.StringTokenizer;
 import org.apache.hadoop.conf.Configuration;
@@ -531,13 +613,10 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-
 public class WordCount {
-
     public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
-
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
             while (itr.hasMoreTokens()) {
@@ -546,10 +625,8 @@ public class WordCount {
             }
         }
     }
-
     public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
         private IntWritable result = new IntWritable();
-
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
@@ -559,7 +636,6 @@ public class WordCount {
             context.write(key, result);
         }
     }
-
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "word count");
@@ -574,9 +650,14 @@ public class WordCount {
     }
 }
 
+
 ############
-# PRACTICAL 12 - Hadoop MapReduce - System Log Processing
-# - Develop a distributed MapReduce program that processes a system's log file.
+# PRACTICAL 12 - Hadoop MapReduce - System Log Processing (JAVA)
+# NOTE: THIS IS A JAVA PROGRAM. SAVE THIS AS LogProcessor.java
+# DO NOT RUN THIS IN A PYTHON NOTEBOOK!
+# - Develop a distributed MapReduce program.
+# - Process a system log file and count log level occurrences.
+# - Example log levels: INFO, WARN, ERROR.
 ############
 import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
@@ -588,13 +669,10 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-
 public class LogProcessor {
-
     public static class LogMapper extends Mapper<Object, Text, Text, IntWritable> {
         private final static IntWritable one = new IntWritable(1);
         private Text logLevel = new Text();
-
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             String[] parts = value.toString().split(" ");
             if (parts.length > 2) {
@@ -603,10 +681,8 @@ public class LogProcessor {
             }
         }
     }
-
     public static class LogReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
         private IntWritable result = new IntWritable();
-
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
@@ -616,7 +692,6 @@ public class LogProcessor {
             context.write(key, result);
         }
     }
-
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "log processor");
@@ -632,6 +707,9 @@ public class LogProcessor {
 }
 
 
-############
-# Practicals Finished!
-############
+###################################################################################
+# ALL PRACTICALS FINISHED!
+# TOTAL PRACTICALS: 12
+# PYTHON PRACTICALS: 1 TO 10
+# JAVA PRACTICALS: 11 AND 12
+###################################################################################
