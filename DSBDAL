@@ -25,7 +25,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('Iris.csv')
+df = pd.read_csv('https://raw.githubusercontent.com/100daysofml/100daysofml.github.io/main/content/Week_03/Iris.csv')
 
 print("Shape of dataset:")
 print(df.shape)
@@ -83,7 +83,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('uber.csv')
+df = pd.read_csv('https://raw.githubusercontent.com/vijaykhv/Uber-Price-Prediction/master/uber.csv')
 
 print(df.head())
 
@@ -188,7 +188,7 @@ plt.show()
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv("Iris.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/100daysofml/100daysofml.github.io/main/content/Week_03/Iris.csv")
 
 print(df.head())
 
@@ -253,7 +253,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-data = pd.read_csv("boston-housing.csv")
+data = pd.read_csv("https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv")
+data = data.rename(columns={"medv": "MEDV"})
 
 print(data.head())
 
@@ -310,7 +311,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 
-data = pd.read_csv("Social_Network_Ads.csv")
+data = pd.read_csv("https://raw.githubusercontent.com/MLEveryday/100-Days-Of-ML-Code/master/datasets/Social_Network_Ads.csv")
 
 print(data.head())
 
@@ -371,7 +372,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import confusion_matrix, accuracy_score
 
-data = pd.read_csv("iris.csv")
+data = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv")
 
 print(data.head())
 
